@@ -96,6 +96,10 @@
 
 - [ ] 3. LLM服务集成与自然语言处理
   - [ ] 3.1 集成大语言模型服务
+
+
+
+
     - 集成OpenAI兼容API(支持Qwen2.5-72B、GLM-4等中文模型)
     - 实现Function Calling和MCP(Model Context Protocol)支持
     - 使用LangChain框架实现多模型LLM服务封装

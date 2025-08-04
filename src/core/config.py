@@ -32,6 +32,24 @@ class Settings(BaseSettings):
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     DEFAULT_MODEL: str = "gpt-3.5-turbo"
     
+    # 中文模型配置
+    QWEN_API_KEY: Optional[str] = None
+    QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    GLM_API_KEY: Optional[str] = None
+    GLM_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4/"
+    DEEPSEEK_API_KEY: Optional[str] = None
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
+    
+    # LLM服务配置
+    LLM_MAX_RETRIES: int = 3
+    LLM_TIMEOUT: int = 60
+    LLM_DEFAULT_TEMPERATURE: float = 0.7
+    LLM_MAX_CONTEXT_LENGTH: int = 4000
+    
+    # Function Calling配置
+    ENABLE_FUNCTION_CALLING: bool = True
+    ENABLE_MCP_TOOLS: bool = True
+    
     # 向量数据库配置
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_API_KEY: Optional[str] = None
