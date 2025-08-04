@@ -46,7 +46,8 @@
 
 ## 任务列表
 
-- [-] 1. 项目基础设施搭建与核心架构实现
+- [x] 1. 项目基础设施搭建与核心架构实现
+
 
   - 创建Python项目结构(使用FastAPI + SQLAlchemy + Pydantic)
   - 配置PostgreSQL主数据库和Redis缓存层
@@ -55,7 +56,8 @@
   - 设置GitHub Actions CI/CD流水线
   - _需求: 11.1, 11.2, 11.3_
 
-- [ ] 2. 核心数据模型与业务实体实现
+- [-] 2. 核心数据模型与业务实体实现
+
   - [ ] 2.1 实现客户实体模型和数据访问层
     - 创建Customer、CustomerProfile、ContactInfo等Pydantic模型
     - 使用SQLAlchemy实现客户数据的ORM映射和CRUD操作
