@@ -3,9 +3,16 @@ API v1 路由配置
 """
 
 from fastapi import APIRouter
-from src.api.v1.endpoints import customers, leads, opportunities, conversations
+from src.api.v1.endpoints import customers, leads, opportunities, conversations, system
 
 api_router = APIRouter()
+
+# 注册系统管理路由
+api_router.include_router(
+    system.router,
+    prefix="/system",
+    tags=["system"]
+)
 
 # 注册各模块路由
 api_router.include_router(

@@ -3,8 +3,10 @@
 """
 
 from pydantic_settings import BaseSettings
-from typing import List, Optional
+from typing import List, Optional, Union
 import os
+import json
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -19,7 +21,7 @@ class Settings(BaseSettings):
     
     # 安全配置
     SECRET_KEY: str = "your-secret-key-change-in-production"
-    ALLOWED_HOSTS: List[str] = ["*"]
+    ALLOWED_HOSTS: Union[List[str], str] = ["*"]
     
     # 数据库配置
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/hicrm"
@@ -49,9 +51,110 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
+    # 文件存储配置
+    UPLOAD_DIR: str = "uploads"
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    
+    # 缓存配置
+    CACHE_TTL: int = 3600  # 1小时
+    CACHE_PREFIX: str = "hicrm:"
+    
+    # API配置
+    API_V1_PREFIX: str = "/api/v1"
+    CORS_ORIGINS: List[str] = ["*"]
+    
+    # 分页配置
+    DEFAULT_PAGE_SIZE: int = 20
+    MAX_PAGE_SIZE: int = 100
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        # 处理ALLOWED_HOSTS字符串格式
+        if isinstance(self.ALLOWED_HOSTS, str):
+            try:
+                self.ALLOWED_HOSTS = json.loads(self.ALLOWED_HOSTS)
+            except json.JSONDecodeError:
+                self.ALLOWED_HOSTS = [self.ALLOWED_HOSTS]
+        
+        # 确保上传目录存在
+        upload_path = Path(self.UPLOAD_DIR)
+        upload_path.mkdir(exist_ok=True)
+    
+    @property
+    def is_development(self) -> bool:
+        """是否为开发环境"""
+        return self.DEBUG
+    
+    @property
+    def is_production(self) -> bool:
+        """是否为生产环境"""
+        return not self.DEBUG
+    
+    @property
+    def database_url_sync(self) -> str:
+        """同步数据库URL（用于Alembic等工具）"""
+        return self.DATABASE_URL.replace("+asyncpg", "")
+    
+    @property
+    def openai_configured(self) -> bool:
+        """检查OpenAI是否已配置"""
+        return bool(self.OPENAI_API_KEY)
+    
+    @property
+    def qdrant_configured(self) -> bool:
+        """检查Qdrant是否已配置"""
+        return bool(self.QDRANT_URL)
+    
+    def get_log_config(self) -> dict:
+        """获取日志配置"""
+        return {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": self.LOG_FORMAT,
+                },
+                "detailed": {
+                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s",
+                },
+            },
+            "handlers": {
+                "default": {
+                    "formatter": "default",
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://sys.stdout",
+                },
+                "file": {
+                    "formatter": "detailed",
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "filename": "logs/hicrm.log",
+                    "maxBytes": 10485760,  # 10MB
+                    "backupCount": 5,
+                },
+            },
+            "loggers": {
+                "": {
+                    "level": self.LOG_LEVEL,
+                    "handlers": ["default", "file"] if not self.is_development else ["default"],
+                },
+                "uvicorn": {
+                    "level": "INFO",
+                    "handlers": ["default"],
+                    "propagate": False,
+                },
+                "sqlalchemy.engine": {
+                    "level": "INFO" if self.DEBUG else "WARNING",
+                    "handlers": ["default"],
+                    "propagate": False,
+                },
+            },
+        }
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # 忽略额外的环境变量
 
 
 # 全局设置实例

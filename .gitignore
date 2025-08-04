@@ -249,7 +249,7 @@ public
 *.sqlite
 
 # Logs
-logs/
+logs/*.log
 *.log
 
 # Configuration files with secrets

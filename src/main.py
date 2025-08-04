@@ -9,17 +9,20 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import uvicorn
 import logging
+import logging.config
+from pathlib import Path
 
 from src.core.config import settings
 from src.core.database import init_db
 from src.api.v1.router import api_router
 from src.websocket.manager import ConnectionManager
 
+# 确保日志目录存在
+log_dir = Path("logs")
+log_dir.mkdir(exist_ok=True)
+
 # 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.config.dictConfig(settings.get_log_config())
 logger = logging.getLogger(__name__)
 
 # WebSocket连接管理器
@@ -53,14 +56,14 @@ app = FastAPI(
 # 配置CORS中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # 注册API路由
-app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 # 静态文件服务
 app.mount("/static", StaticFiles(directory="static"), name="static")

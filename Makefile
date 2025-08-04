@@ -78,3 +78,12 @@ migration:
 # 初始化数据库
 init-db:
 	python -c "from src.core.database import init_db; import asyncio; asyncio.run(init_db())"
+
+# 验证配置
+validate-config:
+	python scripts/validate_config.py
+
+# 检查环境
+check-env:
+	@echo "检查环境配置..."
+	@python -c "from src.core.config import settings; print(f'应用: {settings.APP_NAME} v{settings.VERSION}'); print(f'环境: {'开发' if settings.DEBUG else '生产'}'); print(f'数据库: {settings.DATABASE_URL}'); print(f'LLM: {'已配置' if settings.openai_configured else '未配置'}')"
