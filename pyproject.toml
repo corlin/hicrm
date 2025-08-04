@@ -1,0 +1,280 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hicrm"
+version = "0.1.0"
+description = "对话式智能CRM系统 - 基于LLM和RAG技术的智能客户关系管理平台"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "HiCRM Team", email = "team@hicrm.com"}
+]
+maintainers = [
+    {name = "HiCRM Team", email = "team@hicrm.com"}
+]
+keywords = ["crm", "ai", "llm", "rag", "fastapi", "conversational"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+    "Topic :: Office/Business :: Financial :: Point-Of-Sale",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.11"
+
+# 核心依赖
+dependencies = [
+    # Web Framework
+    "fastapi>=0.104.1,<0.105.0",
+    "uvicorn[standard]>=0.24.0,<0.25.0",
+    "websockets>=12.0,<13.0",
+    
+    # Database
+    "sqlalchemy>=2.0.23,<2.1.0",
+    "alembic>=1.12.1,<1.13.0",
+    "asyncpg>=0.29.0,<0.30.0",
+    "redis>=5.0.1,<6.0.0",
+    
+    # Data Validation
+    "pydantic>=2.5.0,<3.0.0",
+    "pydantic-settings>=2.1.0,<3.0.0",
+    
+    # AI/ML Core
+    "openai>=1.6.1,<2.0.0",
+    "langchain>=0.1.0,<0.2.0",
+    "langchain-community>=0.0.20,<0.1.0",
+    "langgraph>=0.0.20,<0.1.0",
+    
+    # Vector & Embeddings
+    "numpy>=1.24.3,<2.0.0",
+    "qdrant-client>=1.7.0,<2.0.0",
+    
+    # HTTP Client
+    "httpx>=0.25.2,<0.26.0",
+    "aiohttp>=3.9.1,<4.0.0",
+    
+    # Utilities
+    "python-dotenv>=1.0.0,<2.0.0",
+    "python-multipart>=0.0.6,<0.1.0",
+    "python-jose[cryptography]>=3.3.0,<4.0.0",
+    "passlib[bcrypt]>=1.7.4,<2.0.0",
+    "email-validator>=2.1.0,<3.0.0",
+    
+    # Monitoring & Logging
+    "prometheus-client>=0.19.0,<0.20.0",
+    "structlog>=23.2.0,<24.0.0",
+]
+
+[project.optional-dependencies]
+# AI/ML 扩展依赖
+ai-extended = [
+    "sentence-transformers>=2.2.2,<3.0.0",
+    "llama-index>=0.9.15,<0.10.0",
+    "faiss-cpu>=1.7.4,<2.0.0",
+    "chromadb>=0.4.18,<0.5.0",
+]
+
+# 测试依赖
+test = [
+    "pytest>=7.4.3,<8.0.0",
+    "pytest-asyncio>=0.21.1,<0.22.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "pytest-mock>=3.12.0,<4.0.0",
+    "pytest-xdist>=3.5.0,<4.0.0",  # 并行测试
+    "coverage>=7.3.0,<8.0.0",
+]
+
+# 开发依赖
+dev = [
+    "black>=23.11.0,<24.0.0",
+    "isort>=5.12.0,<6.0.0",
+    "flake8>=6.1.0,<7.0.0",
+    "mypy>=1.7.1,<2.0.0",
+    "pre-commit>=3.6.0,<4.0.0",
+    "ruff>=0.1.0,<0.2.0",  # 更快的linter
+]
+
+# 文档依赖
+docs = [
+    "mkdocs>=1.5.3,<2.0.0",
+    "mkdocs-material>=9.4.8,<10.0.0",
+    "mkdocs-mermaid2-plugin>=1.1.0,<2.0.0",
+    "mkdocstrings[python]>=0.24.0,<0.25.0",
+]
+
+# 生产环境依赖
+prod = [
+    "gunicorn>=21.2.0,<22.0.0",
+    "psutil>=5.9.0,<6.0.0",
+]
+
+# 完整开发环境
+full = [
+    "hicrm[ai-extended,test,dev,docs]",
+]
+
+[project.urls]
+Homepage = "https://github.com/hicrm/hicrm"
+Documentation = "https://hicrm.readthedocs.io"
+Repository = "https://github.com/hicrm/hicrm.git"
+Issues = "https://github.com/hicrm/hicrm/issues"
+Changelog = "https://github.com/hicrm/hicrm/blob/main/CHANGELOG.md"
+
+[project.scripts]
+hicrm = "src.main:main"
+hicrm-dev = "src.main:dev_main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.uv]
+# UV 特定配置
+dev-dependencies = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.1",
+    "pytest-cov>=4.1.0",
+    "black>=23.11.0",
+    "isort>=5.12.0",
+    "mypy>=1.7.1",
+    "ruff>=0.1.0",
+]
+
+[tool.uv.sources]
+# 可以指定特定包的源
+# openai = { git = "https://github.com/openai/openai-python.git", tag = "v1.6.1" }
+
+[tool.black]
+line-length = 88
+target-version = ['py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["src", "tests"]
+known_third_party = ["fastapi", "sqlalchemy", "pydantic", "openai", "langchain"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "langchain.*",
+    "langgraph.*",
+    "qdrant_client.*",
+    "sentence_transformers.*",
+    "llama_index.*",
+    "chromadb.*",
+    "faiss.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "performance: marks tests as performance tests",
+    "ai: marks tests that require AI services",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["B011"]
+
+[tool.ruff.isort]
+known-first-party = ["src", "tests"]

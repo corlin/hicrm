@@ -1,9 +1,12 @@
 version: '3.8'
 
 services:
-  # 主应用服务
+  # 主应用服务 (使用UV构建)
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: hicrm-app
     ports:
       - "8000:8000"
     environment:
@@ -11,51 +14,91 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - DEBUG=false
+      - LOG_LEVEL=INFO
     depends_on:
-      - postgres
-      - redis
-      - qdrant
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    networks:
+      - hicrm-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
 
   # PostgreSQL数据库
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
+    container_name: hicrm-postgres
     environment:
       - POSTGRES_DB=hicrm
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hicrm-network
     restart: unless-stopped
 
   # Redis缓存
   redis:
     image: redis:7-alpine
+    container_name: hicrm-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - hicrm-network
     restart: unless-stopped
 
   # Qdrant向量数据库
   qdrant:
     image: qdrant/qdrant:latest
+    container_name: hicrm-qdrant
     ports:
       - "6333:6333"
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    networks:
+      - hicrm-network
     restart: unless-stopped
 
   # RabbitMQ消息队列
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
+    container_name: hicrm-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -64,11 +107,19 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    networks:
+      - hicrm-network
     restart: unless-stopped
 
   # Elasticsearch (用于混合检索)
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: hicrm-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -77,11 +128,41 @@ services:
       - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - hicrm-network
+    restart: unless-stopped
+
+  # Nginx反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: hicrm-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - hicrm-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
   qdrant_data:
+    driver: local
   rabbitmq_data:
+    driver: local
   elasticsearch_data:
+    driver: local
+
+networks:
+  hicrm-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

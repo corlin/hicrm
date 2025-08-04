@@ -20,9 +20,11 @@ async def get_leads(
     db: AsyncSession = Depends(get_db)
 ):
     """获取线索列表"""
-    service = LeadService(db)
-    leads = await service.get_leads(skip=skip, limit=limit)
-    return leads
+    service = LeadService()
+    page = (skip // limit) + 1
+    size = limit
+    result = await service.list_leads(db, page=page, size=size)
+    return result.leads
 
 
 @router.get("/{lead_id}", response_model=LeadResponse)
@@ -31,8 +33,8 @@ async def get_lead(
     db: AsyncSession = Depends(get_db)
 ):
     """获取单个线索信息"""
-    service = LeadService(db)
-    lead = await service.get_lead(lead_id)
+    service = LeadService()
+    lead = await service.get_lead(lead_id, db)
     if not lead:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -47,8 +49,8 @@ async def create_lead(
     db: AsyncSession = Depends(get_db)
 ):
     """创建新线索"""
-    service = LeadService(db)
-    lead = await service.create_lead(lead_data)
+    service = LeadService()
+    lead = await service.create_lead(lead_data, db)
     return lead
 
 
@@ -59,8 +61,8 @@ async def update_lead(
     db: AsyncSession = Depends(get_db)
 ):
     """更新线索信息"""
-    service = LeadService(db)
-    lead = await service.update_lead(lead_id, lead_data)
+    service = LeadService()
+    lead = await service.update_lead(lead_id, lead_data, db)
     if not lead:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -75,11 +77,11 @@ async def calculate_lead_score(
     db: AsyncSession = Depends(get_db)
 ):
     """计算线索评分"""
-    service = LeadService(db)
-    score = await service.calculate_score(lead_id)
-    if score is None:
+    service = LeadService()
+    lead = await service.get_lead(lead_id, db, include_score=True)
+    if lead is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="线索不存在"
         )
-    return {"lead_id": lead_id, "score": score}
+    return {"lead_id": lead_id, "score": lead.current_score}

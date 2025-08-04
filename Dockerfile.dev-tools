@@ -1,0 +1,50 @@
+# 开发工具容器
+FROM python:3.11-slim
+
+# 安装UV
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# 安装系统工具
+RUN apt-get update && apt-get install -y \
+    --no-install-recommends \
+    git \
+    curl \
+    wget \
+    vim \
+    nano \
+    htop \
+    postgresql-client \
+    redis-tools \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# 设置工作目录
+WORKDIR /workspace
+
+# 设置环境变量
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1
+
+# 复制项目配置文件
+COPY pyproject.toml uv.lock ./
+
+# 安装所有依赖
+RUN uv sync --all-extras
+
+# 确保虚拟环境在PATH中
+ENV PATH="/workspace/.venv/bin:$PATH"
+
+# 安装额外的开发工具
+RUN uv add --dev \
+    ipython \
+    jupyter \
+    pgcli \
+    httpie
+
+# 创建开发用户
+RUN useradd --create-home --shell /bin/bash --uid 1000 dev
+USER dev
+
+# 默认命令
+CMD ["bash"]

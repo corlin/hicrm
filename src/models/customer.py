@@ -62,7 +62,7 @@ class Customer(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
     
     # 关系
-    # opportunities = relationship("Opportunity", back_populates="customer")
+    opportunities = relationship("Opportunity", back_populates="customer", cascade="all, delete-orphan")
     # interactions = relationship("Interaction", back_populates="customer")
 
     def __repr__(self):

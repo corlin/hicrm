@@ -1,0 +1,112 @@
+# 开发环境 Docker Compose 配置
+version: '3.8'
+
+services:
+  # 开发环境应用服务
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: hicrm-app-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/hicrm_dev
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - RELOAD=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/.venv  # 排除虚拟环境
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    networks:
+      - hicrm-dev-network
+    restart: unless-stopped
+    command: ["uv", "run", "uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+
+  # PostgreSQL数据库 (开发环境)
+  postgres:
+    image: postgres:15-alpine
+    container_name: hicrm-postgres-dev
+    environment:
+      - POSTGRES_DB=hicrm_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5433:5432"  # 使用不同端口避免冲突
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./scripts/init-dev.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hicrm-dev-network
+    restart: unless-stopped
+
+  # Redis缓存 (开发环境)
+  redis:
+    image: redis:7-alpine
+    container_name: hicrm-redis-dev
+    ports:
+      - "6380:6379"  # 使用不同端口避免冲突
+    volumes:
+      - redis_dev_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - hicrm-dev-network
+    restart: unless-stopped
+
+  # Qdrant向量数据库 (开发环境)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: hicrm-qdrant-dev
+    ports:
+      - "6334:6333"  # 使用不同端口避免冲突
+    volumes:
+      - qdrant_dev_data:/qdrant/storage
+    networks:
+      - hicrm-dev-network
+    restart: unless-stopped
+
+  # 开发工具容器
+  dev-tools:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev-tools
+    container_name: hicrm-dev-tools
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    networks:
+      - hicrm-dev-network
+    profiles:
+      - tools
+    command: tail -f /dev/null  # 保持容器运行
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  qdrant_dev_data:
+    driver: local
+
+networks:
+  hicrm-dev-network:
+    driver: bridge
