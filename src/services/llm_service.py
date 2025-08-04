@@ -28,14 +28,14 @@ logger = logging.getLogger(__name__)
 
 class ModelType(str, Enum):
     """支持的模型类型"""
-    GPT_3_5_TURBO = "gpt-3.5-turbo"
-    GPT_4 = "gpt-4"
-    GPT_4_TURBO = "gpt-4-turbo-preview"
-    QWEN_72B = "qwen2.5-72b-instruct"
-    GLM_4 = "glm-4"
-    DEEPSEEK_CHAT = "deepseek-chat"
-    CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
-    CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
+    GPT_3_5_TURBO = "openai/gpt-3.5-turbo"
+    GPT_4 = "openai/gpt-4"
+    GPT_4_TURBO = "openai/gpt-4-turbo"
+    QWEN_72B = "qwen/qwen-2.5-72b-instruct" # Corrected Qwen model name for OpenRouter
+    GLM_4 = "z-ai/glm-4.5-air" # Corrected GLM model name for OpenRouter
+    DEEPSEEK_CHAT = "deepseek/deepseek-r1-0528" # Corrected DeepSeek model name for OpenRouter
+    CLAUDE_3_HAIKU = "anthropic/claude-3-haiku" # This is a standard Anthropic model ID
+    CLAUDE_3_SONNET = "aanthropic/claude-3-sonnet" # This is a standard Anthropic model ID
 
 
 class FallbackStrategy(str, Enum):
@@ -149,9 +149,11 @@ class ChineseTokenOptimizer:
 class LangChainLLMWrapper(BaseChatModel):
     """LangChain LLM包装器"""
     
-    def __init__(self, llm_service: 'EnhancedLLMService'):
-        super().__init__()
-        self.llm_service = llm_service
+    llm_service: Any = None
+    
+    def __init__(self, llm_service: 'EnhancedLLMService', **kwargs):
+        super().__init__(**kwargs)
+        object.__setattr__(self, 'llm_service', llm_service)
     
     def _generate(
         self,
@@ -212,6 +214,7 @@ class EnhancedLLMService:
         self.token_optimizer = ChineseTokenOptimizer()
         self.langchain_wrapper = LangChainLLMWrapper(self)
         
+
         # 初始化模型配置
         self._init_model_configs()
         
@@ -229,7 +232,7 @@ class EnhancedLLMService:
         """初始化模型配置"""
         self.model_configs = {
             ModelType.GPT_3_5_TURBO: ModelConfig(
-                name="gpt-3.5-turbo",
+                name="openai/gpt-3.5-turbo",
                 max_tokens=4096,
                 context_window=16385,
                 supports_function_calling=True,
@@ -238,7 +241,7 @@ class EnhancedLLMService:
                 priority=3
             ),
             ModelType.GPT_4: ModelConfig(
-                name="gpt-4",
+                name="openai/gpt-4",
                 max_tokens=8192,
                 context_window=8192,
                 supports_function_calling=True,
@@ -247,7 +250,7 @@ class EnhancedLLMService:
                 priority=2
             ),
             ModelType.GPT_4_TURBO: ModelConfig(
-                name="gpt-4-turbo-preview",
+                name="openai/gpt-4-turbo-preview",
                 max_tokens=4096,
                 context_window=128000,
                 supports_function_calling=True,
@@ -256,7 +259,7 @@ class EnhancedLLMService:
                 priority=1
             ),
             ModelType.QWEN_72B: ModelConfig(
-                name="qwen2.5-72b-instruct",
+                name="qwen/qwen2.5-72b-instruct",
                 max_tokens=8192,
                 context_window=32768,
                 supports_function_calling=True,
@@ -266,7 +269,7 @@ class EnhancedLLMService:
                 chinese_optimized=True
             ),
             ModelType.GLM_4: ModelConfig(
-                name="glm-4",
+                name="glm/glm-4",
                 max_tokens=4096,
                 context_window=128000,
                 supports_function_calling=True,
@@ -276,7 +279,7 @@ class EnhancedLLMService:
                 chinese_optimized=True
             ),
             ModelType.DEEPSEEK_CHAT: ModelConfig(
-                name="deepseek-chat",
+                name="deepseek/deepseek-chat",
                 max_tokens=4096,
                 context_window=32768,
                 supports_function_calling=True,
@@ -397,12 +400,17 @@ class EnhancedLLMService:
     
     def _get_client_for_model(self, model: str) -> openai.AsyncOpenAI:
         """根据模型获取对应的客户端"""
-        if model.startswith("qwen") and "qwen" in self.clients:
+        if model.startswith("qwen/") and "qwen" in self.clients:
             return self.clients["qwen"]
-        elif model.startswith("glm") and "glm" in self.clients:
+        elif model.startswith("glm/") and "glm" in self.clients:
             return self.clients["glm"]
         else:
-            return self.clients.get("default")
+            # Fallback to the default client (e.g., OpenRouter) if no specific client is configured
+            # This allows using models from various providers through a single proxy/API gateway.
+            default_client = self.clients.get("default")
+            if not default_client:
+                raise ValueError("Default LLM client not configured. Please check your OPENAI_API_KEY and OPENAI_BASE_URL.")
+            return default_client
     
     def _get_fallback_models(self, current_model: str) -> List[str]:
         """获取降级模型列表"""
