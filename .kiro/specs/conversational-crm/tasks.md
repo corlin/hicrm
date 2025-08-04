@@ -46,7 +46,8 @@
 
 ## 任务列表
 
-- [ ] 1. 项目基础设施搭建与核心架构实现
+- [-] 1. 项目基础设施搭建与核心架构实现
+
   - 创建Python项目结构(使用FastAPI + SQLAlchemy + Pydantic)
   - 配置PostgreSQL主数据库和Redis缓存层
   - 搭建FastAPI REST API框架和WebSocket支持
