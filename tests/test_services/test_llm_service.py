@@ -356,7 +356,8 @@ class TestEnhancedLLMService:
     async def test_fallback_strategy(self, llm_service):
         """测试降级策略"""
         # 模拟主模型失败
-        llm_service.clients["default"].chat.completions.create.side_effect = Exception("API Error")
+        original_client = llm_service.clients["default"]
+        original_client.chat.completions.create.side_effect = Exception("API Error")
         
         # 模拟降级模型成功
         fallback_client = AsyncMock()
@@ -368,15 +369,18 @@ class TestEnhancedLLMService:
         mock_response.created = 1234567890
         
         fallback_client.chat.completions.create.return_value = mock_response
-        llm_service.clients["default"] = fallback_client
         
         messages = [{"role": "user", "content": "测试"}]
         
         # 测试降级到下一个模型
         with patch.object(llm_service, '_get_fallback_models', return_value=["gpt-3.5-turbo"]):
-            with patch.object(llm_service, '_get_client_for_model', return_value=fallback_client):
+            with patch.object(llm_service, '_get_client_for_model') as mock_get_client:
+                # 第一次调用返回失败的客户端，第二次返回成功的客户端
+                mock_get_client.side_effect = [original_client, fallback_client]
+                
                 response = await llm_service.chat_completion(
                     messages,
+                    model="gpt-4",  # 指定一个会失败的模型
                     fallback_strategy=FallbackStrategy.NEXT_MODEL
                 )
                 
