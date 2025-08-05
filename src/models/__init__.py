@@ -2,6 +2,7 @@
 
 from .customer import Customer, CompanySize, CustomerStatus
 from .lead import Lead, LeadScore, ScoreFactor, LeadInteraction, LeadStatus, LeadSource
+from .conversation import Conversation, Message, ConversationState, ConversationStatus, MessageRole
 
 __all__ = [
     "Customer",
@@ -12,5 +13,10 @@ __all__ = [
     "ScoreFactor",
     "LeadInteraction",
     "LeadStatus",
-    "LeadSource"
+    "LeadSource",
+    "Conversation",
+    "Message",
+    "ConversationState",
+    "ConversationStatus",
+    "MessageRole"
 ]

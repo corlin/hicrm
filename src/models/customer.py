@@ -61,8 +61,8 @@ class Customer(Base):
     created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
     
-    # 关系
-    opportunities = relationship("Opportunity", back_populates="customer", cascade="all, delete-orphan")
+    # 关系 - 使用字符串引用避免循环导入
+    # opportunities = relationship("Opportunity", back_populates="customer", cascade="all, delete-orphan")
     # interactions = relationship("Interaction", back_populates="customer")
 
     def __repr__(self):
