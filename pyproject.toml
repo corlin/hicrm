@@ -51,6 +51,7 @@ dependencies = [
     # Vector & Embeddings
     "numpy>=1.24.3,<2.0.0",
     "qdrant-client>=1.7.0,<2.0.0",
+    "elasticsearch>=8.11.0,<9.0.0",
     # HTTP Client
     "httpx>=0.25.2,<0.26.0",
     "aiohttp>=3.9.1,<4.0.0",
@@ -64,6 +65,7 @@ dependencies = [
     # Monitoring & Logging
     "prometheus-client>=0.19.0,<0.20.0",
     "structlog>=23.2.0,<24.0.0",
+    "sentence-transformers>=2.7.0",
 ]
 
 [project.optional-dependencies]

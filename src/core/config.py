@@ -54,9 +54,16 @@ class Settings(BaseSettings):
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_API_KEY: Optional[str] = None
     
+    # Elasticsearch配置
+    ELASTICSEARCH_URL: str = "http://localhost:9200"
+    ELASTICSEARCH_USERNAME: Optional[str] = None
+    ELASTICSEARCH_PASSWORD: Optional[str] = None
+    ELASTICSEARCH_INDEX_PREFIX: str = "hicrm"
+    
     # BGE模型配置
     BGE_MODEL_NAME: str = "BAAI/bge-m3"
     BGE_RERANKER_MODEL: str = "BAAI/bge-reranker-v2-m3"
+    BGE_DEVICE: str = "cpu"  # 可以设置为 "cuda" 如果有GPU
     
     # 消息队列配置
     RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/"
@@ -123,6 +130,11 @@ class Settings(BaseSettings):
     def qdrant_configured(self) -> bool:
         """检查Qdrant是否已配置"""
         return bool(self.QDRANT_URL)
+    
+    @property
+    def elasticsearch_configured(self) -> bool:
+        """检查Elasticsearch是否已配置"""
+        return bool(self.ELASTICSEARCH_URL)
     
     def get_log_config(self) -> dict:
         """获取日志配置"""
