@@ -404,57 +404,95 @@ class NLUService:
     async def _analyze_with_llm(self, text: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """使用LLM进行深度NLU分析"""
         
-        # 构建提示词
-        system_prompt = """你是一个专业的CRM系统NLU分析器，专门处理中文销售和客户管理相关的对话。
+        # 构建更详细的提示词
+        system_prompt = """你是一个专业的CRM系统自然语言理解分析器，专门处理中文销售和客户管理相关的对话。
 
-请分析用户输入，识别以下信息：
-1. 意图类型（从以下选项中选择）：
-   - customer_search: 搜索客户
-   - customer_create: 创建客户
-   - customer_update: 更新客户信息
-   - customer_analysis: 客户分析
-   - lead_search: 搜索线索
-   - lead_create: 创建线索
-   - lead_update: 更新线索
-   - lead_scoring: 线索评分
-   - opportunity_search: 搜索销售机会
-   - opportunity_create: 创建销售机会
-   - opportunity_update: 更新销售机会
-   - task_create: 创建任务
-   - schedule_meeting: 安排会议
-   - report_generate: 生成报告
-   - greeting: 问候
-   - help: 寻求帮助
-   - unknown: 未知意图
+## 任务说明
+分析用户输入的中文文本，准确识别意图和实体信息。
 
-2. 实体信息（提取以下类型的实体）：
-   - person: 人名
-   - company: 公司名
-   - industry: 行业
-   - budget: 预算金额
-   - date: 日期时间
-   - location: 地理位置
-   - product: 产品服务
-   - number: 数字
+## 意图类型定义
+请从以下意图类型中选择最匹配的一个：
 
-请以JSON格式返回结果：
+**客户管理类**：
+- customer_search: 查询、搜索、查找客户信息
+- customer_create: 新建、创建、添加客户
+- customer_update: 更新、修改客户信息
+- customer_analysis: 客户分析、客户画像
+
+**线索管理类**：
+- lead_search: 查询、搜索线索
+- lead_create: 新建、创建线索
+- lead_update: 更新线索状态
+- lead_scoring: 线索评分、质量评估
+- lead_assignment: 分配线索
+
+**销售机会类**：
+- opportunity_search: 查询销售机会
+- opportunity_create: 创建销售机会
+- opportunity_update: 更新机会状态
+- opportunity_analysis: 机会分析、预测
+
+**任务活动类**：
+- task_create: 创建任务、待办事项
+- task_search: 查询任务
+- schedule_meeting: 安排会议、预约拜访
+
+**报告分析类**：
+- report_generate: 生成报告
+- performance_analysis: 业绩分析
+- forecast_analysis: 销售预测
+
+**通用类**：
+- greeting: 问候语
+- help: 寻求帮助
+- unknown: 无法识别的意图
+
+## 实体类型定义
+识别以下类型的实体：
+
+- **person**: 人名（如：张三、李经理、王总）
+- **company**: 公司名称（如：ABC公司、德芙科技有限公司）
+- **industry**: 行业类型（如：制造业、金融业、教育行业）
+- **budget**: 预算金额（如：50万、100万元、预算200万）
+- **date**: 日期时间（如：明天、下周、2024年1月）
+- **location**: 地理位置（如：北京、上海、深圳）
+- **product**: 产品服务（如：CRM系统、ERP软件）
+- **number**: 数字（如：50、100、3个）
+- **status**: 状态（如：已完成、进行中、待处理）
+- **priority**: 优先级（如：高优先级、紧急、重要）
+
+## 输出格式
+必须严格按照以下JSON格式输出，不要添加任何额外的文字说明：
+
 {
   "intent": "意图类型",
-  "confidence": 0.0-1.0的置信度,
+  "confidence": 置信度数值(0.0-1.0),
   "entities": [
     {
       "type": "实体类型",
       "value": "实体值",
-      "confidence": 0.0-1.0的置信度
+      "confidence": 置信度数值(0.0-1.0)
     }
   ]
-}"""
+}
 
-        user_prompt = f"""用户输入: {text}
+## 分析要求
+1. 仔细分析用户输入的语义和上下文
+2. 选择最符合的意图类型
+3. 提取所有相关实体
+4. 给出合理的置信度评分
+5. 确保JSON格式正确"""
 
-上下文信息: {json.dumps(context or {}, ensure_ascii=False)}
+        # 构建用户提示词
+        context_info = ""
+        if context:
+            context_info = f"\n\n上下文信息：{json.dumps(context, ensure_ascii=False, indent=2)}"
 
-请分析并返回JSON结果："""
+        user_prompt = f"""请分析以下用户输入：
+
+用户输入：{text}{context_info}
+
+请按照要求的JSON格式返回分析结果："""
 
         try:
             messages = [
@@ -466,44 +504,215 @@ class NLUService:
                 messages=messages,
                 model=ModelType.QWEN_72B,  # 使用中文优化模型
                 temperature=0.1,  # 低温度确保一致性
-                max_tokens=1000
+                max_tokens=1500
             )
             
             # 解析JSON响应
             result_text = response.get("content", "").strip()
-            if result_text.startswith('```json'):
-                result_text = result_text[7:-3].strip()
-            elif result_text.startswith('```'):
-                result_text = result_text[3:-3].strip()
             
-            result = json.loads(result_text)
+            # 更鲁棒的JSON提取
+            result_json = self._extract_json_from_response(result_text)
+            if not result_json:
+                logger.warning(f"无法从LLM响应中提取有效JSON: {result_text}")
+                return self._get_fallback_result()
             
-            # 转换实体格式
+            # 验证和转换结果
+            return await self._process_llm_result(result_json, text)
+            
+        except Exception as e:
+            logger.error(f"LLM NLU分析失败: {str(e)}")
+            return self._get_fallback_result()
+    
+    def _extract_json_from_response(self, response_text: str) -> Optional[Dict[str, Any]]:
+        """从LLM响应中提取JSON"""
+        try:
+            # 移除代码块标记
+            if '```json' in response_text:
+                start = response_text.find('```json') + 7
+                end = response_text.find('```', start)
+                if end != -1:
+                    response_text = response_text[start:end].strip()
+            elif '```' in response_text:
+                start = response_text.find('```') + 3
+                end = response_text.find('```', start)
+                if end != -1:
+                    response_text = response_text[start:end].strip()
+            
+            # 查找JSON对象
+            start_brace = response_text.find('{')
+            if start_brace == -1:
+                return None
+            
+            # 找到匹配的结束大括号
+            brace_count = 0
+            end_brace = start_brace
+            for i, char in enumerate(response_text[start_brace:], start_brace):
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        end_brace = i
+                        break
+            
+            json_str = response_text[start_brace:end_brace + 1]
+            return json.loads(json_str)
+            
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"JSON解析失败: {str(e)}, 原文: {response_text}")
+            return None
+    
+    async def _process_llm_result(self, result_json: Dict[str, Any], original_text: str) -> Dict[str, Any]:
+        """处理和验证LLM结果"""
+        try:
+            # 验证意图
+            intent_str = result_json.get('intent', 'unknown')
+            try:
+                intent = IntentType(intent_str)
+            except ValueError:
+                logger.warning(f"无效的意图类型: {intent_str}")
+                intent = IntentType.UNKNOWN
+            
+            # 验证置信度
+            confidence = float(result_json.get('confidence', 0.8))
+            confidence = max(0.0, min(1.0, confidence))  # 限制在0-1之间
+            
+            # 处理实体
             entities = []
-            for entity_data in result.get('entities', []):
-                entity = Entity(
-                    type=EntityType(entity_data['type']),
-                    value=entity_data['value'],
-                    confidence=entity_data.get('confidence', 0.8),
-                    start_pos=0,  # LLM无法提供精确位置
-                    end_pos=len(entity_data['value']),
-                    metadata={"source": "llm"}
-                )
-                entities.append(entity)
+            for entity_data in result_json.get('entities', []):
+                try:
+                    entity_type_str = entity_data.get('type', '')
+                    entity_value = entity_data.get('value', '')
+                    entity_confidence = float(entity_data.get('confidence', 0.8))
+                    
+                    # 验证实体类型
+                    try:
+                        entity_type = EntityType(entity_type_str)
+                    except ValueError:
+                        logger.warning(f"无效的实体类型: {entity_type_str}")
+                        continue
+                    
+                    # 查找实体在原文中的位置
+                    start_pos, end_pos = self._find_entity_position(original_text, entity_value)
+                    
+                    # 标准化实体值
+                    normalized_value = self._normalize_entity_value_advanced(entity_type, entity_value)
+                    
+                    entity = Entity(
+                        type=entity_type,
+                        value=entity_value,
+                        confidence=max(0.0, min(1.0, entity_confidence)),
+                        start_pos=start_pos,
+                        end_pos=end_pos,
+                        normalized_value=normalized_value,
+                        metadata={"source": "llm"}
+                    )
+                    entities.append(entity)
+                    
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"处理实体失败: {entity_data}, 错误: {str(e)}")
+                    continue
             
             return {
-                'intent': IntentType(result['intent']),
-                'confidence': result.get('confidence', 0.8),
+                'intent': intent,
+                'confidence': confidence,
                 'entities': entities
             }
             
         except Exception as e:
-            logger.error(f"LLM NLU分析失败: {str(e)}")
-            return {
-                'intent': IntentType.UNKNOWN,
-                'confidence': 0.0,
-                'entities': []
-            }
+            logger.error(f"处理LLM结果失败: {str(e)}")
+            return self._get_fallback_result()
+    
+    def _find_entity_position(self, text: str, entity_value: str) -> Tuple[int, int]:
+        """在原文中查找实体位置"""
+        try:
+            # 直接查找
+            start_pos = text.find(entity_value)
+            if start_pos != -1:
+                return start_pos, start_pos + len(entity_value)
+            
+            # 模糊查找（去除空格和标点）
+            clean_entity = re.sub(r'[^\w\u4e00-\u9fff]', '', entity_value)
+            clean_text = re.sub(r'[^\w\u4e00-\u9fff]', '', text)
+            
+            start_pos = clean_text.find(clean_entity)
+            if start_pos != -1:
+                # 映射回原文位置（简化处理）
+                return start_pos, start_pos + len(entity_value)
+            
+            return 0, len(entity_value)
+            
+        except Exception:
+            return 0, len(entity_value)
+    
+    def _normalize_entity_value_advanced(self, entity_type: EntityType, value: str) -> Any:
+        """高级实体值标准化"""
+        try:
+            if entity_type == EntityType.BUDGET:
+                # 提取数字和单位
+                number_match = re.search(r'(\d+(?:\.\d+)?)', value)
+                if number_match:
+                    number = float(number_match.group(1))
+                    if '百万' in value:
+                        return number * 1000000
+                    elif '万' in value:
+                        return number * 10000
+                    elif '千' in value:
+                        return number * 1000
+                    elif '亿' in value:
+                        return number * 100000000
+                    return number
+                    
+            elif entity_type == EntityType.NUMBER:
+                number_match = re.search(r'(\d+(?:\.\d+)?)', value)
+                if number_match:
+                    return float(number_match.group(1))
+                    
+            elif entity_type == EntityType.DATE:
+                # 简单的日期标准化
+                if '明天' in value:
+                    return 'tomorrow'
+                elif '今天' in value:
+                    return 'today'
+                elif '昨天' in value:
+                    return 'yesterday'
+                elif '下周' in value:
+                    return 'next_week'
+                elif '本周' in value:
+                    return 'this_week'
+                elif '下月' in value:
+                    return 'next_month'
+                elif '本月' in value:
+                    return 'this_month'
+                    
+            elif entity_type == EntityType.INDUSTRY:
+                # 行业标准化
+                industry_mapping = {
+                    '制造': '制造业',
+                    '金融': '金融业',
+                    '教育': '教育行业',
+                    '医疗': '医疗行业',
+                    '零售': '零售业',
+                    '房地产': '房地产业',
+                    '汽车': '汽车行业',
+                    '能源': '能源行业'
+                }
+                for key, standard_name in industry_mapping.items():
+                    if key in value:
+                        return standard_name
+            
+            return value
+            
+        except Exception:
+            return value
+    
+    def _get_fallback_result(self) -> Dict[str, Any]:
+        """获取回退结果"""
+        return {
+            'intent': IntentType.UNKNOWN,
+            'confidence': 0.0,
+            'entities': []
+        }
     
     def _deduplicate_entities(self, entities: List[Entity]) -> List[Entity]:
         """去除重复实体"""
