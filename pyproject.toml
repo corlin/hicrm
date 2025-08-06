@@ -67,6 +67,9 @@ dependencies = [
     "structlog>=23.2.0,<24.0.0",
     "sentence-transformers>=2.7.0",
     "requests-toolbelt>=1.0.0",
+    "llama-index>=0.9.48",
+    "langchain-core>=0.1.53",
+    "langchain-text-splitters>=0.0.2",
 ]
 
 [project.optional-dependencies]

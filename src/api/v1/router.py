@@ -3,7 +3,7 @@ API v1 路由配置
 """
 
 from fastapi import APIRouter
-from src.api.v1.endpoints import customers, leads, opportunities, conversations, system
+from src.api.v1.endpoints import customers, leads, opportunities, conversations, system, rag
 
 api_router = APIRouter()
 
@@ -37,4 +37,10 @@ api_router.include_router(
     conversations.router,
     prefix="/conversations",
     tags=["conversations"]
+)
+
+api_router.include_router(
+    rag.router,
+    prefix="/rag",
+    tags=["rag"]
 )

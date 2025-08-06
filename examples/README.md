@@ -32,29 +32,41 @@
    - 统一运行所有示例程序
    - 提供交互式体验
 
+### RAG服务示例
+
+6. **`rag_service_examples.py`** - RAG服务完整示例
+   - 展示检索增强生成(RAG)服务的所有功能
+   - 包含10个详细的功能演示
+   - 涵盖中文文本处理、多种检索模式、重排序等
+
+7. **`rag_simple_demo.py`** - RAG服务简化演示
+   - 专门用于快速验证RAG功能
+   - 避免外部依赖问题
+   - 支持交互式问答演示
+
 ### 向量数据库和嵌入服务示例
 
-6. **`vector_database_examples.py`** - 向量数据库服务示例
+8. **`vector_database_examples.py`** - 向量数据库服务示例
    - 展示Qdrant向量数据库的基本操作和高级功能
    - 包含文档管理、向量搜索、相似度计算等功能
    - 演示性能测试和优化技巧
 
-7. **`embedding_service_examples.py`** - BGE-M3嵌入服务示例
+9. **`embedding_service_examples.py`** - BGE-M3嵌入服务示例
    - 展示BGE-M3多语言嵌入模型的使用方法
    - 包含文本编码、相似度计算、重排序等功能
    - 演示缓存机制和多语言支持
 
-8. **`hybrid_search_examples.py`** - 混合搜索服务示例
+10. **`hybrid_search_examples.py`** - 混合搜索服务示例
    - 展示如何结合向量搜索和BM25搜索实现混合检索
    - 包含不同搜索模式、权重配置、过滤搜索等功能
    - 演示性能对比和统计分析
 
-9. **`chinese_search_examples.py`** - 中文语义搜索示例
+11. **`chinese_search_examples.py`** - 中文语义搜索示例
    - 专门针对中文文本的语义搜索功能演示
    - 包含中文预处理、同义词扩展、意图分析等功能
    - 演示中文搜索优化和性能分析
 
-10. **`run_vector_examples.py`** - 向量示例运行器
+12. **`run_vector_examples.py`** - 向量示例运行器
     - 统一运行所有向量数据库和嵌入服务示例
     - 提供交互式选择和批量运行功能
 
@@ -75,6 +87,26 @@ uv run python examples/validation_report.py
 #### 运行所有对话示例程序
 ```bash
 uv run python examples/run_examples.py
+```
+
+### RAG服务示例
+
+#### 运行RAG服务示例
+```bash
+# 运行完整RAG演示
+uv run python examples/rag_service_examples.py
+
+# 运行简化RAG演示
+uv run python examples/rag_simple_demo.py
+
+# 交互式问答演示
+uv run python examples/rag_simple_demo.py interactive
+
+# 性能测试
+uv run python examples/rag_simple_demo.py performance
+
+# 运行特定示例 (1-10)
+uv run python examples/rag_service_examples.py 7
 ```
 
 ### 向量数据库和嵌入服务示例

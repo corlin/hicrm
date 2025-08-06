@@ -1,1 +1,3 @@
-# 测试模块
+"""
+Test package for the HiCRM system.
+"""
