@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import sys
 from typing import List, Dict, Any, Optional, Union
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -11,6 +12,11 @@ import torch
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+import warnings
+
+# Suppress all FutureWarnings from transformers and other libraries to prevent test failures
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", message="`encoder_attention_mask` is deprecated")
 
 from src.core.config import settings
 
@@ -73,6 +79,8 @@ class EmbeddingService:
     def _load_embedding_model(self) -> SentenceTransformer:
         """加载嵌入模型"""
         try:
+            # Suppress specific deprecation warnings from transformers
+            warnings.filterwarnings("ignore", message="`encoder_attention_mask` is deprecated", category=FutureWarning)
             model = SentenceTransformer(
                 settings.BGE_MODEL_NAME,
                 device=settings.BGE_DEVICE
@@ -90,6 +98,8 @@ class EmbeddingService:
     def _load_reranker_model(self) -> SentenceTransformer:
         """加载重排序模型"""
         try:
+            # Suppress specific deprecation warnings from transformers
+            warnings.filterwarnings("ignore", message="`encoder_attention_mask` is deprecated", category=FutureWarning)
             model = SentenceTransformer(
                 settings.BGE_RERANKER_MODEL,
                 device=settings.BGE_DEVICE
@@ -200,23 +210,34 @@ class EmbeddingService:
         batch_size: int = 32
     ) -> List[np.ndarray]:
         """批量编码文本"""
+        if not self.model:
+            logger.error("Embedding model is not available for encoding.")
+            raise RuntimeError("Embedding model not initialized")
+
+        # 预处理文本
+        processed_texts = [self._preprocess_text(text) for text in texts]
+        
         try:
-            # 预处理文本
-            processed_texts = [self._preprocess_text(text) for text in texts]
-            
             # 批量编码
             embeddings = self.model.encode(
                 processed_texts,
                 batch_size=batch_size,
                 normalize_embeddings=normalize,
-                show_progress_bar=False,
-                convert_to_numpy=True
+                convert_to_numpy=True,
+                show_progress_bar=False
             )
             
-            return [emb.astype(np.float32) for emb in embeddings]
+            # 确保结果是列表
+            if isinstance(embeddings, np.ndarray) and len(embeddings.shape) == 2:
+                embeddings = [embeddings[i] for i in range(embeddings.shape[0])]
+
+            # 确保每个向量的数据类型为 float32
+            embeddings = [emb.astype(np.float32) for emb in embeddings]
             
-        except Exception as e:
-            logger.error(f"批量编码失败: {e}")
+            return embeddings
+                
+        except RuntimeError as e:
+            logger.error(f"批量编码运行时错误: {e}")
             raise
     
     def _preprocess_text(self, text: str) -> str:

@@ -1,8 +1,10 @@
-# 对话状态管理系统示例程序
+# HiCRM 系统示例程序
 
-本目录包含了对话状态管理系统的各种示例程序和验证脚本，用于演示和验证系统的各项功能。
+本目录包含了HiCRM对话式客户关系管理系统的各种示例程序和验证脚本，用于演示和验证系统的各项功能。
 
 ## 📁 文件说明
+
+### 对话状态管理示例
 
 ### 核心示例程序
 
@@ -30,21 +32,72 @@
    - 统一运行所有示例程序
    - 提供交互式体验
 
+### 向量数据库和嵌入服务示例
+
+6. **`vector_database_examples.py`** - 向量数据库服务示例
+   - 展示Qdrant向量数据库的基本操作和高级功能
+   - 包含文档管理、向量搜索、相似度计算等功能
+   - 演示性能测试和优化技巧
+
+7. **`embedding_service_examples.py`** - BGE-M3嵌入服务示例
+   - 展示BGE-M3多语言嵌入模型的使用方法
+   - 包含文本编码、相似度计算、重排序等功能
+   - 演示缓存机制和多语言支持
+
+8. **`hybrid_search_examples.py`** - 混合搜索服务示例
+   - 展示如何结合向量搜索和BM25搜索实现混合检索
+   - 包含不同搜索模式、权重配置、过滤搜索等功能
+   - 演示性能对比和统计分析
+
+9. **`chinese_search_examples.py`** - 中文语义搜索示例
+   - 专门针对中文文本的语义搜索功能演示
+   - 包含中文预处理、同义词扩展、意图分析等功能
+   - 演示中文搜索优化和性能分析
+
+10. **`run_vector_examples.py`** - 向量示例运行器
+    - 统一运行所有向量数据库和嵌入服务示例
+    - 提供交互式选择和批量运行功能
+
 ## 🚀 快速开始
 
-### 运行简化验证程序
+### 对话状态管理示例
+
+#### 运行简化验证程序
 ```bash
 uv run python examples/simple_conversation_demo.py
 ```
 
-### 运行详细验证报告
+#### 运行详细验证报告
 ```bash
 uv run python examples/validation_report.py
 ```
 
-### 运行所有示例程序
+#### 运行所有对话示例程序
 ```bash
 uv run python examples/run_examples.py
+```
+
+### 向量数据库和嵌入服务示例
+
+#### 环境准备
+```bash
+# 启动Qdrant向量数据库
+docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+
+# 启动Elasticsearch
+docker run -p 9200:9200 -e "discovery.type=single-node" elasticsearch:8.11.0
+```
+
+#### 运行向量数据库示例
+```bash
+# 运行所有向量示例
+uv run python examples/run_vector_examples.py
+
+# 运行特定示例
+uv run python examples/vector_database_examples.py
+uv run python examples/embedding_service_examples.py
+uv run python examples/hybrid_search_examples.py
+uv run python examples/chinese_search_examples.py
 ```
 
 ## 📊 验证结果
@@ -169,12 +222,25 @@ uv run python examples/run_examples.py
 2. 项目路径是否正确设置
 3. 模拟数据库连接是否正常
 
+## 📚 详细文档
+
+- **向量数据库示例详细说明**: [README_VECTOR_EXAMPLES.md](README_VECTOR_EXAMPLES.md)
+- **Qdrant连接测试说明**: [README_QDRANT_TESTS.md](README_QDRANT_TESTS.md)
+
 ## 🎉 结论
 
-对话状态管理系统的示例程序验证结果表明：
+HiCRM系统的示例程序验证结果表明：
+
+### 对话状态管理系统
 - **功能完整性**: 100% ✅
 - **代码质量**: 优秀 ✅
 - **架构设计**: 合理 ✅
 - **可用性**: 良好 ✅
+
+### 向量数据库和嵌入服务
+- **BGE-M3嵌入模型**: 正常工作 ✅
+- **Qdrant向量数据库**: 连接正常 ✅
+- **混合搜索功能**: 运行良好 ✅
+- **中文语义搜索**: 优化完善 ✅
 
 系统已经准备好投入实际使用！

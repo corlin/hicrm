@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import sys
 from typing import List, Dict, Any, Optional, Union, Tuple
 import uuid
 from datetime import datetime
@@ -73,18 +74,61 @@ class VectorService:
         try:
             logger.info("正在初始化Qdrant向量数据库连接...")
             
-            # 创建Qdrant客户端
-            if settings.QDRANT_API_KEY:
-                self.client = QdrantClient(
-                    url=settings.QDRANT_URL,
-                    api_key=settings.QDRANT_API_KEY,
-                    timeout=30
-                )
+            # 验证连接配置
+            await self._validate_connection_config()
+            
+            # 创建Qdrant客户端配置
+            use_grpc = getattr(settings, 'QDRANT_USE_GRPC', True)
+            
+            if use_grpc:
+                # gRPC连接配置
+                if ':' in settings.QDRANT_URL:
+                    host, port = settings.QDRANT_URL.split(':')
+                    port = int(port)
+                else:
+                    host = settings.QDRANT_URL
+                    port = 6334
+                
+                client_config = {
+                    "host": host,
+                    "port": port,
+                    "prefer_grpc": True,
+                    "timeout": 30,
+                    "check_compatibility": False
+                }
             else:
-                self.client = QdrantClient(
-                    url=settings.QDRANT_URL,
-                    timeout=30
-                )
+                # HTTP连接配置（保留兼容性）
+                client_config = {
+                    "url": settings.QDRANT_URL if settings.QDRANT_URL.startswith('http') else f"http://{settings.QDRANT_URL}",
+                    "timeout": 30,
+                    "prefer_grpc": False,
+                    "https": settings.QDRANT_URL.startswith('https'),
+                    "verify": False if not settings.QDRANT_URL.startswith('https') else True,
+                    "check_compatibility": False
+                }
+            
+            # 处理API key配置
+            if settings.QDRANT_API_KEY and settings.QDRANT_API_KEY.strip():
+                # 检查是否为开发环境的默认值
+                if settings.QDRANT_API_KEY == "hicrm" and settings.QDRANT_URL.startswith('http://'):
+                    logger.warning("检测到开发环境配置：使用HTTP协议和默认API key")
+                    logger.warning("为避免安全警告，建议:")
+                    logger.warning("1. 在.env中设置 QDRANT_API_KEY= (空值)")
+                    logger.warning("2. 或使用HTTPS: QDRANT_URL=https://localhost:6333")
+                    
+                    # 在开发环境中，如果用户明确想要跳过API key，可以设置为空
+                    if settings.DEBUG:
+                        logger.info("开发模式：跳过API key以避免安全警告")
+                        self.client = QdrantClient(**client_config)
+                    else:
+                        client_config["api_key"] = settings.QDRANT_API_KEY
+                        self.client = QdrantClient(**client_config)
+                else:
+                    client_config["api_key"] = settings.QDRANT_API_KEY
+                    self.client = QdrantClient(**client_config)
+            else:
+                logger.info("未配置API key，使用无认证连接")
+                self.client = QdrantClient(**client_config)
             
             # 测试连接
             await self._test_connection()
@@ -101,14 +145,156 @@ class VectorService:
             logger.error(f"初始化Qdrant失败: {e}")
             raise
     
+    async def _validate_connection_config(self) -> None:
+        """验证连接配置"""
+        try:
+            use_grpc = getattr(settings, 'QDRANT_USE_GRPC', True)
+            
+            logger.info(f"Qdrant连接配置验证:")
+            logger.info(f"  - URL: {settings.QDRANT_URL}")
+            logger.info(f"  - 连接方式: {'gRPC' if use_grpc else 'HTTP'}")
+            logger.info(f"  - API Key: {'已配置' if settings.QDRANT_API_KEY else '未配置'}")
+            
+            if use_grpc:
+                # gRPC连接验证
+                if ':' in settings.QDRANT_URL:
+                    host, port = settings.QDRANT_URL.split(':')
+                    port = int(port)
+                    logger.info(f"  - gRPC主机: {host}")
+                    logger.info(f"  - gRPC端口: {port}")
+                    
+                    if port == 6334:
+                        logger.info("  - 使用标准gRPC端口 (6334)")
+                    elif port == 6333:
+                        logger.warning("  - 使用HTTP端口 (6333) 进行gRPC连接，请确认配置")
+                    else:
+                        logger.warning(f"  - 使用非标准端口 ({port})，请确认配置正确")
+                else:
+                    logger.info(f"  - gRPC主机: {settings.QDRANT_URL}")
+                    logger.info(f"  - gRPC端口: 6334 (默认)")
+            else:
+                # HTTP连接验证（保留兼容性）
+                import urllib.parse
+                if settings.QDRANT_URL.startswith('http'):
+                    parsed_url = urllib.parse.urlparse(settings.QDRANT_URL)
+                    logger.info(f"  - HTTP协议: {parsed_url.scheme}")
+                    logger.info(f"  - HTTP主机: {parsed_url.hostname}")
+                    logger.info(f"  - HTTP端口: {parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)}")
+                else:
+                    logger.info(f"  - HTTP主机: {settings.QDRANT_URL}")
+                    logger.info(f"  - HTTP端口: 6333 (默认)")
+            
+        except Exception as e:
+            logger.warning(f"连接配置验证失败: {e}")
+    
+    async def _check_port_connectivity(self, host: str, port: int) -> bool:
+        """检查端口连通性"""
+        import socket
+        import asyncio
+        
+        try:
+            # 创建socket连接测试
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
+            
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None, 
+                lambda: sock.connect_ex((host, port))
+            )
+            
+            sock.close()
+            return result == 0
+            
+        except Exception as e:
+            logger.debug(f"端口连通性检查失败: {e}")
+            return False
+    
     async def _test_connection(self) -> None:
         """测试数据库连接"""
+        import urllib.parse
+        
         try:
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, self.client.get_collections)
             logger.info("Qdrant连接测试成功")
+            
+        except UnexpectedResponse as e:
+            parsed_url = urllib.parse.urlparse(settings.QDRANT_URL)
+            host = parsed_url.hostname or 'localhost'
+            port = parsed_url.port or 6333
+            
+            if e.status_code == 502:
+                logger.error("Qdrant服务未运行或不可访问 (502 Bad Gateway)")
+                
+                # 检查端口连通性
+                logger.info("正在检查端口连通性...")
+                
+                # 检查HTTP端口 (6333)
+                http_available = await self._check_port_connectivity(host, 6333)
+                logger.info(f"端口 6333 (HTTP): {'可用' if http_available else '不可用'}")
+                
+                # 检查gRPC端口 (6334)
+                grpc_available = await self._check_port_connectivity(host, 6334)
+                logger.info(f"端口 6334 (gRPC): {'可用' if grpc_available else '不可用'}")
+                
+                logger.error("请检查:")
+                logger.error("1. Qdrant服务是否已启动:")
+                logger.error("   - docker-compose up -d qdrant")
+                logger.error("   - docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant")
+                logger.error(f"2. 服务地址是否正确: {settings.QDRANT_URL}")
+                
+                if port == 6334:
+                    logger.error("3. 当前配置使用gRPC端口(6334)，但客户端设置为HTTP模式")
+                    logger.error("   建议修改URL为: http://localhost:6333")
+                elif not http_available and grpc_available:
+                    logger.error("3. HTTP端口(6333)不可用，但gRPC端口(6334)可用")
+                    logger.error("   请检查Qdrant服务配置")
+                
+                logger.error("4. 防火墙是否阻止了连接")
+                logger.error("5. 检查服务状态: curl http://localhost:6333/collections")
+                
+            elif e.status_code == 404:
+                logger.error("Qdrant API端点未找到 (404 Not Found)")
+                logger.error("可能的原因:")
+                logger.error("1. URL路径不正确")
+                logger.error("2. Qdrant版本不兼容")
+                logger.error("3. 服务未完全启动")
+                
+            elif e.status_code == 401 or e.status_code == 403:
+                logger.error(f"Qdrant认证失败 (HTTP {e.status_code})")
+                logger.error("请检查:")
+                logger.error("1. API Key是否正确")
+                logger.error("2. Qdrant服务是否启用了认证")
+                
+            else:
+                logger.error(f"Qdrant连接失败 (HTTP {e.status_code}): {e}")
+                
+            raise
+            
         except Exception as e:
             logger.error(f"Qdrant连接测试失败: {e}")
+            
+            # 尝试基本的连通性检查
+            try:
+                parsed_url = urllib.parse.urlparse(settings.QDRANT_URL)
+                host = parsed_url.hostname or 'localhost'
+                
+                logger.info("正在进行基本连通性检查...")
+                http_available = await self._check_port_connectivity(host, 6333)
+                grpc_available = await self._check_port_connectivity(host, 6334)
+                
+                logger.info(f"端口 6333 (HTTP): {'可用' if http_available else '不可用'}")
+                logger.info(f"端口 6334 (gRPC): {'可用' if grpc_available else '不可用'}")
+                
+                if not http_available and not grpc_available:
+                    logger.error("Qdrant服务似乎未运行，请启动服务")
+                elif not http_available and grpc_available:
+                    logger.error("HTTP端口不可用，请检查Qdrant配置")
+                    
+            except Exception as check_error:
+                logger.debug(f"连通性检查失败: {check_error}")
+                
             raise
     
     async def _get_embedding_dimension(self) -> None:
@@ -169,29 +355,30 @@ class VectorService:
             # 创建集合
             logger.info(f"创建向量集合: {collection_name}, 维度: {vector_size}")
             
-            await loop.run_in_executor(
-                None,
-                self.client.create_collection,
-                collection_name,
-                VectorParams(size=vector_size, distance=distance),
-                # 优化配置
-                OptimizersConfigDiff(
-                    default_segment_number=2,
-                    max_segment_size=None,
-                    memmap_threshold=None,
-                    indexing_threshold=20000,
-                    flush_interval_sec=5,
-                    max_optimization_threads=None
-                ),
-                HnswConfigDiff(
-                    m=16,
-                    ef_construct=100,
-                    full_scan_threshold=10000,
-                    max_indexing_threads=0,
-                    on_disk=None,
-                    payload_m=None
+            def create_collection_sync():
+                return self.client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=VectorParams(size=vector_size, distance=distance),
+                    # 优化配置
+                    optimizers_config=OptimizersConfigDiff(
+                        default_segment_number=2,
+                        max_segment_size=None,
+                        memmap_threshold=None,
+                        indexing_threshold=20000,
+                        flush_interval_sec=5,
+                        max_optimization_threads=None
+                    ),
+                    hnsw_config=HnswConfigDiff(
+                        m=16,
+                        ef_construct=100,
+                        full_scan_threshold=10000,
+                        max_indexing_threads=0,
+                        on_disk=None,
+                        payload_m=None
+                    )
                 )
-            )
+            
+            await loop.run_in_executor(None, create_collection_sync)
             
             self.collections[collection_name] = {
                 "vector_size": vector_size,
@@ -236,6 +423,12 @@ class VectorService:
             texts = [doc.content for doc in documents]
             embeddings = await embedding_service.encode(texts)
             
+
+            # 检查是否获取到有效的嵌入向量
+            if not embeddings or any(e is None or e.size == 0 for e in embeddings):
+                logger.error("嵌入服务返回空或无效的向量，无法添加文档")
+                return False
+                
             # 批量处理
             for i in range(0, len(documents), batch_size):
                 batch_docs = documents[i:i + batch_size]
@@ -259,12 +452,13 @@ class VectorService:
                 
                 # 插入点
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(
-                    None,
-                    self.client.upsert,
-                    collection_name,
-                    points
-                )
+                def upsert_sync():
+                    return self.client.upsert(
+                        collection_name=collection_name,
+                        points=points
+                    )
+                
+                await loop.run_in_executor(None, upsert_sync)
                 
                 logger.debug(f"批量插入 {len(points)} 个文档到集合 {collection_name}")
             
@@ -302,6 +496,11 @@ class VectorService:
             # 生成查询向量
             query_embedding = await embedding_service.encode(query)
             
+            # 检查是否获取到有效的嵌入向量
+            if query_embedding is None or not hasattr(query_embedding, 'size') or query_embedding.size == 0:
+                logger.error("嵌入服务返回空或无效的向量，无法执行搜索")
+                return []
+                
             # 构建过滤器
             filter_conditions = None
             if filters:
@@ -309,15 +508,16 @@ class VectorService:
             
             # 执行搜索
             loop = asyncio.get_event_loop()
-            search_result = await loop.run_in_executor(
-                None,
-                self.client.search,
-                collection_name,
-                query_embedding.tolist(),
-                filter_conditions,
-                limit,
-                score_threshold
-            )
+            def search_sync():
+                return self.client.search(
+                    collection_name=collection_name,
+                    query_vector=query_embedding.tolist(),
+                    query_filter=filter_conditions,
+                    limit=limit,
+                    score_threshold=score_threshold
+                )
+            
+            search_result = await loop.run_in_executor(None, search_sync)
             
             # 转换结果
             results = []
@@ -331,10 +531,14 @@ class VectorService:
                     }
                 )
                 
+                distance = point.score
+                if self.collections.get(collection_name, {}).get("distance") == Distance.COSINE:
+                    distance = 1.0 - point.score
+
                 result = VectorSearchResult(
                     document=doc,
                     score=point.score,
-                    distance=1.0 - point.score  # 转换为距离
+                    distance=distance
                 )
                 results.append(result)
             
@@ -369,6 +573,11 @@ class VectorService:
         collection_name = collection_name or self.default_collection
         
         try:
+            # 检查向量是否有效
+            if vector is None or vector.size == 0:
+                logger.error("提供的向量为空，无法执行搜索")
+                return []
+                
             # 构建过滤器
             filter_conditions = None
             if filters:
@@ -376,15 +585,16 @@ class VectorService:
             
             # 执行搜索
             loop = asyncio.get_event_loop()
-            search_result = await loop.run_in_executor(
-                None,
-                self.client.search,
-                collection_name,
-                vector.tolist(),
-                filter_conditions,
-                limit,
-                score_threshold
-            )
+            def search_by_vector_sync():
+                return self.client.search(
+                    collection_name=collection_name,
+                    query_vector=vector.tolist(),
+                    query_filter=filter_conditions,
+                    limit=limit,
+                    score_threshold=score_threshold
+                )
+            
+            search_result = await loop.run_in_executor(None, search_by_vector_sync)
             
             # 转换结果
             results = []
@@ -398,10 +608,14 @@ class VectorService:
                     }
                 )
                 
+                distance = point.score
+                if self.collections.get(collection_name, {}).get("distance") == Distance.COSINE:
+                    distance = 1.0 - point.score
+                
                 result = VectorSearchResult(
                     document=doc,
                     score=point.score,
-                    distance=1.0 - point.score
+                    distance=distance
                 )
                 results.append(result)
             
@@ -411,17 +625,32 @@ class VectorService:
             logger.error(f"向量搜索失败: {e}")
             return []
     
-    def _build_filter(self, filters: Dict[str, Any]) -> Filter:
+    def _build_filter(self, filters: Dict[str, Any]) -> Optional[Filter]:
         """构建Qdrant过滤器"""
         conditions = []
-        
+
         for key, value in filters.items():
-            if isinstance(value, (str, int, float, bool)):
-                condition = FieldCondition(
-                    key=key,
-                    match=MatchValue(value=value)
-                )
-                conditions.append(condition)
+            try:
+                # Qdrant的MatchValue支持str, bool
+                if isinstance(value, (str, bool)):
+                    condition = FieldCondition(key=key, match=MatchValue(value=value))
+                    conditions.append(condition)
+                elif isinstance(value, (int, float)):
+                    # 对于整数和浮点数，使用范围查询进行精确匹配
+                    condition = FieldCondition(
+                        key=key,
+                        range=models.Range(
+                            gte=value,
+                            lte=value
+                        )
+                    )
+                    conditions.append(condition)
+                else:
+                    logger.warning(f"不支持的过滤类型: {type(value)} for key {key}")
+
+            except Exception as e:
+                logger.warning(f"无法为值创建过滤条件: {key}={value}, 错误: {e}")
+                continue
         
         return Filter(must=conditions) if conditions else None
     
@@ -444,12 +673,13 @@ class VectorService:
         
         try:
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                None,
-                self.client.delete,
-                collection_name,
-                document_ids
-            )
+            def delete_sync():
+                return self.client.delete(
+                    collection_name=collection_name,
+                    points_selector=document_ids
+                )
+            
+            await loop.run_in_executor(None, delete_sync)
             
             logger.info(f"成功删除 {len(document_ids)} 个文档")
             return True
@@ -479,6 +709,11 @@ class VectorService:
             # 生成嵌入向量
             embedding = await embedding_service.encode(document.content)
             
+            # 检查是否获取到有效的嵌入向量
+            if embedding is None or not hasattr(embedding, 'size') or embedding.size == 0:
+                logger.error("嵌入服务返回空或无效的向量，无法更新文档")
+                return False
+                
             # 准备元数据
             payload = {
                 "content": document.content,
@@ -494,12 +729,13 @@ class VectorService:
             
             # 更新点
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                None,
-                self.client.upsert,
-                collection_name,
-                [point]
-            )
+            def update_sync():
+                return self.client.upsert(
+                    collection_name=collection_name,
+                    points=[point]
+                )
+            
+            await loop.run_in_executor(None, update_sync)
             
             logger.debug(f"成功更新文档: {document.id}")
             return True
@@ -525,11 +761,10 @@ class VectorService:
         
         try:
             loop = asyncio.get_event_loop()
-            info = await loop.run_in_executor(
-                None,
-                self.client.get_collection,
-                collection_name
-            )
+            def get_collection_sync():
+                return self.client.get_collection(collection_name)
+            
+            info = await loop.run_in_executor(None, get_collection_sync)
             
             return {
                 "name": collection_name,
@@ -562,11 +797,10 @@ class VectorService:
         """删除集合"""
         try:
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                None,
-                self.client.delete_collection,
-                collection_name
-            )
+            def delete_collection_sync():
+                return self.client.delete_collection(collection_name)
+            
+            await loop.run_in_executor(None, delete_collection_sync)
             
             if collection_name in self.collections:
                 del self.collections[collection_name]

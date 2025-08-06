@@ -102,7 +102,7 @@ class TestVectorService:
     async def test_initialize_with_api_key(self, service):
         """测试使用API密钥初始化"""
         with patch('src.core.config.settings') as mock_settings:
-            mock_settings.QDRANT_API_KEY = "hicrmabc"
+            mock_settings.QDRANT_API_KEY = "hicrm"
             mock_settings.QDRANT_URL = "http://localhost:6333"
             
             with patch('src.services.vector_service.QdrantClient') as mock_client_class:
@@ -119,7 +119,7 @@ class TestVectorService:
                     # 验证使用API密钥创建客户端
                     mock_client_class.assert_called_with(
                         url="http://localhost:6333",
-                        api_key="test-api-key",
+                        api_key="hicrm",
                         timeout=30
                     )
     

@@ -1,0 +1,304 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.10, pytest-7.4.4, pluggy-1.6.0 -- D:\homedev\hicrm\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\homedev\hicrm
+configfile: pyproject.toml
+plugins: anyio-3.7.1, asyncio-0.21.2, cov-4.1.0, mock-3.14.1, xdist-3.8.0
+asyncio: mode=Mode.AUTO
+collecting ... collected 33 items
+
+tests/test_services/test_vector_service.py::TestVectorDocument::test_create_document PASSED [  3%]
+tests/test_services/test_vector_service.py::TestVectorDocument::test_create_document_with_embedding PASSED [  6%]
+tests/test_services/test_vector_service.py::TestVectorSearchResult::test_create_result PASSED [  9%]
+tests/test_services/test_vector_service.py::TestVectorService::test_initialize_success PASSED [ 12%]
+tests/test_services/test_vector_service.py::TestVectorService::test_initialize_with_api_key PASSED [ 15%]
+tests/test_services/test_vector_service.py::TestVectorService::test_initialize_failure PASSED [ 18%]
+tests/test_services/test_vector_service.py::TestVectorService::test_create_collection_success PASSED [ 21%]
+tests/test_services/test_vector_service.py::TestVectorService::test_create_collection_already_exists PASSED [ 24%]
+tests/test_services/test_vector_service.py::TestVectorService::test_create_collection_recreate PASSED [ 27%]
+tests/test_services/test_vector_service.py::TestVectorService::test_add_documents_success FAILED [ 30%]
+tests/test_services/test_vector_service.py::TestVectorService::test_add_documents_empty_list PASSED [ 33%]
+tests/test_services/test_vector_service.py::TestVectorService::test_add_documents_create_collection FAILED [ 36%]
+tests/test_services/test_vector_service.py::TestVectorService::test_add_documents_failure PASSED [ 39%]
+tests/test_services/test_vector_service.py::TestVectorService::test_search_success FAILED [ 42%]
+tests/test_services/test_vector_service.py::TestVectorService::test_search_with_filters FAILED [ 45%]
+tests/test_services/test_vector_service.py::TestVectorService::test_search_by_vector PASSED [ 48%]
+tests/test_services/test_vector_service.py::TestVectorService::test_search_failure PASSED [ 51%]
+tests/test_services/test_vector_service.py::TestVectorService::test_delete_documents_success PASSED [ 54%]
+tests/test_services/test_vector_service.py::TestVectorService::test_delete_documents_failure PASSED [ 57%]
+tests/test_services/test_vector_service.py::TestVectorService::test_update_document_success FAILED [ 60%]
+tests/test_services/test_vector_service.py::TestVectorService::test_update_document_failure PASSED [ 63%]
+tests/test_services/test_vector_service.py::TestVectorService::test_get_collection_info PASSED [ 66%]
+tests/test_services/test_vector_service.py::TestVectorService::test_get_collection_info_failure PASSED [ 69%]
+tests/test_services/test_vector_service.py::TestVectorService::test_list_collections PASSED [ 72%]
+tests/test_services/test_vector_service.py::TestVectorService::test_list_collections_failure PASSED [ 75%]
+tests/test_services/test_vector_service.py::TestVectorService::test_delete_collection_success PASSED [ 78%]
+tests/test_services/test_vector_service.py::TestVectorService::test_delete_collection_failure PASSED [ 81%]
+tests/test_services/test_vector_service.py::TestVectorService::test_get_stats PASSED [ 84%]
+tests/test_services/test_vector_service.py::TestVectorService::test_get_stats_failure PASSED [ 87%]
+tests/test_services/test_vector_service.py::TestVectorService::test_build_filter FAILED [ 90%]
+tests/test_services/test_vector_service.py::TestVectorService::test_build_filter_empty PASSED [ 93%]
+tests/test_services/test_vector_service.py::TestVectorService::test_close PASSED [ 96%]
+tests/test_services/test_vector_service.py::TestGlobalService::test_global_service_instance PASSED [100%]
+
+================================== FAILURES ===================================
+________________ TestVectorService.test_add_documents_success _________________
+
+self = <tests.test_services.test_vector_service.TestVectorService object at 0x0000023D2B1E4290>
+service = <src.services.vector_service.VectorService object at 0x0000023D2BB633D0>
+sample_documents = [<src.services.vector_service.VectorDocument object at 0x0000023D2BB610D0>, <src.services.vector_service.VectorDocument object at 0x0000023D2BB62E50>, <src.services.vector_service.VectorDocument object at 0x0000023D2BB62D90>]
+mock_qdrant_client = <Mock id='2461749619920'>
+
+    @pytest.mark.asyncio
+    async def test_add_documents_success(self, service, sample_documents, mock_qdrant_client):
+        """测试成功添加文档"""
+        service.client = mock_qdrant_client
+        service.collections["test_collection"] = {"vector_size": 1024}
+    
+        with patch('src.services.embedding_service.embedding_service') as mock_embedding:
+            # 模拟嵌入服务返回向量
+            embeddings = [np.array([0.1] * 1024) for _ in sample_documents]
+            mock_embedding.encode = AsyncMock(return_value=embeddings)
+    
+            mock_qdrant_client.upsert = Mock()
+    
+            result = await service.add_documents(sample_documents, "test_collection")
+    
+>           assert result is True
+E           assert False is True
+
+tests\test_services\test_vector_service.py:200: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2025-08-05 13:36:47,414 - src.services.embedding_service - ERROR - 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+2025-08-05 13:36:47,414 - src.services.vector_service - ERROR - 添加文档失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+------------------------------ Captured log call ------------------------------
+ERROR    src.services.embedding_service:embedding_service.py:219 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+ERROR    src.services.vector_service:vector_service.py:275 添加文档失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+___________ TestVectorService.test_add_documents_create_collection ____________
+
+self = <tests.test_services.test_vector_service.TestVectorService object at 0x0000023D2B1E5110>
+service = <src.services.vector_service.VectorService object at 0x0000023D2BCB5CD0>
+sample_documents = [<src.services.vector_service.VectorDocument object at 0x0000023D2BCB7010>, <src.services.vector_service.VectorDocument object at 0x0000023D2BCB6D50>, <src.services.vector_service.VectorDocument object at 0x0000023D2BCB63D0>]
+mock_qdrant_client = <Mock id='2461751015120'>
+
+    @pytest.mark.asyncio
+    async def test_add_documents_create_collection(self, service, sample_documents, mock_qdrant_client):
+        """测试添加文档时自动创建集合"""
+        service.client = mock_qdrant_client
+    
+        with patch('src.services.embedding_service.embedding_service') as mock_embedding:
+            with patch.object(service, 'create_collection', return_value=True) as mock_create:
+                embeddings = [np.array([0.1] * 1024) for _ in sample_documents]
+                mock_embedding.encode = AsyncMock(return_value=embeddings)
+                mock_qdrant_client.upsert = Mock()
+    
+                result = await service.add_documents(sample_documents)
+    
+>               assert result is True
+E               assert False is True
+
+tests\test_services\test_vector_service.py:223: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2025-08-05 13:36:47,463 - src.services.embedding_service - ERROR - 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+2025-08-05 13:36:47,466 - src.services.vector_service - ERROR - 添加文档失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+------------------------------ Captured log call ------------------------------
+ERROR    src.services.embedding_service:embedding_service.py:219 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+ERROR    src.services.vector_service:vector_service.py:275 添加文档失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+____________________ TestVectorService.test_search_success ____________________
+
+self = <tests.test_services.test_vector_service.TestVectorService object at 0x0000023D2B1E5F90>
+service = <src.services.vector_service.VectorService object at 0x0000023D2BC65B50>
+mock_qdrant_client = <Mock id='2461750897936'>
+
+    @pytest.mark.asyncio
+    async def test_search_success(self, service, mock_qdrant_client):
+        """测试成功搜索"""
+        service.client = mock_qdrant_client
+    
+        # 模拟搜索结果
+        mock_point = Mock()
+        mock_point.id = "doc1"
+        mock_point.score = 0.95
+        mock_point.payload = {
+            "content": "测试内容",
+            "created_at": "2023-01-01T00:00:00",
+            "category": "test"
+        }
+    
+        mock_qdrant_client.search.return_value = [mock_point]
+    
+        with patch('src.services.embedding_service.embedding_service') as mock_embedding:
+            mock_embedding.encode = AsyncMock(return_value=np.array([0.1] * 1024))
+    
+            results = await service.search("测试查询")
+    
+>           assert len(results) == 1
+E           assert 0 == 1
+E            +  where 0 = len([])
+
+tests\test_services\test_vector_service.py:261: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2025-08-05 13:36:47,530 - src.services.embedding_service - ERROR - 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+2025-08-05 13:36:47,531 - src.services.vector_service - ERROR - 向量搜索失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+------------------------------ Captured log call ------------------------------
+ERROR    src.services.embedding_service:embedding_service.py:219 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+ERROR    src.services.vector_service:vector_service.py:345 向量搜索失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+_________________ TestVectorService.test_search_with_filters __________________
+
+self = <tests.test_services.test_vector_service.TestVectorService object at 0x0000023D2B1E66D0>
+service = <src.services.vector_service.VectorService object at 0x0000023D2BAEA190>
+mock_qdrant_client = <Mock id='2461749124944'>
+
+    @pytest.mark.asyncio
+    async def test_search_with_filters(self, service, mock_qdrant_client):
+        """测试带过滤条件的搜索"""
+        service.client = mock_qdrant_client
+        mock_qdrant_client.search.return_value = []
+    
+        with patch('src.services.embedding_service.embedding_service') as mock_embedding:
+            mock_embedding.encode = AsyncMock(return_value=np.array([0.1] * 1024))
+    
+            filters = {"category": "tech"}
+            await service.search("测试查询", filters=filters)
+    
+            # 验证过滤器被正确传递
+            call_args = mock_qdrant_client.search.call_args
+>           assert call_args is not None
+E           assert None is not None
+
+tests\test_services\test_vector_service.py:283: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2025-08-05 13:36:47,571 - src.services.embedding_service - ERROR - 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+2025-08-05 13:36:47,572 - src.services.vector_service - ERROR - 向量搜索失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+------------------------------ Captured log call ------------------------------
+ERROR    src.services.embedding_service:embedding_service.py:219 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+ERROR    src.services.vector_service:vector_service.py:345 向量搜索失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+_______________ TestVectorService.test_update_document_success ________________
+
+self = <tests.test_services.test_vector_service.TestVectorService object at 0x0000023D2B1ECB50>
+service = <src.services.vector_service.VectorService object at 0x0000023D2BB73D50>
+mock_qdrant_client = <Mock id='2461749679376'>
+
+    @pytest.mark.asyncio
+    async def test_update_document_success(self, service, mock_qdrant_client):
+        """测试成功更新文档"""
+        service.client = mock_qdrant_client
+        mock_qdrant_client.upsert = Mock()
+    
+        with patch('src.services.embedding_service.embedding_service') as mock_embedding:
+            mock_embedding.encode = AsyncMock(return_value=np.array([0.1] * 1024))
+    
+            doc = VectorDocument("doc1", "更新内容", {"category": "updated"})
+            result = await service.update_document(doc)
+    
+>           assert result is True
+E           assert False is True
+
+tests\test_services\test_vector_service.py:350: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2025-08-05 13:36:47,649 - src.services.embedding_service - ERROR - 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+2025-08-05 13:36:47,650 - src.services.vector_service - ERROR - 更新文档失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+------------------------------ Captured log call ------------------------------
+ERROR    src.services.embedding_service:embedding_service.py:219 批量编码失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+ERROR    src.services.vector_service:vector_service.py:508 更新文档失败: `encoder_attention_mask` is deprecated and will be removed in version 4.55.0 for `XLMRobertaSdpaSelfAttention.forward`.
+_____________________ TestVectorService.test_build_filter _____________________
+
+self = <tests.test_services.test_vector_service.TestVectorService object at 0x0000023D2B1EEBD0>
+service = <src.services.vector_service.VectorService object at 0x0000023D2BC862D0>
+
+    def test_build_filter(self, service):
+        """测试构建过滤器"""
+        filters = {
+            "category": "tech",
+            "author": "张三",
+            "score": 0.8,
+            "published": True
+        }
+    
+>       filter_obj = service._build_filter(filters)
+
+tests\test_services\test_vector_service.py:480: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.services.vector_service.VectorService object at 0x0000023D2BC862D0>
+filters = {'author': '张三', 'category': 'tech', 'published': True, 'score': 0.8}
+
+    def _build_filter(self, filters: Dict[str, Any]) -> Filter:
+        """构建Qdrant过滤器"""
+        conditions = []
+    
+        for key, value in filters.items():
+            if isinstance(value, (str, int, float, bool)):
+                condition = FieldCondition(
+                    key=key,
+>                   match=MatchValue(value=value)
+                )
+E               pydantic_core._pydantic_core.ValidationError: 3 validation errors for MatchValue
+E               value.bool
+E                 Input should be a valid boolean [type=bool_type, input_value=0.8, input_type=float]
+E                   For further information visit https://errors.pydantic.dev/2.11/v/bool_type
+E               value.int
+E                 Input should be a valid integer [type=int_type, input_value=0.8, input_type=float]
+E                   For further information visit https://errors.pydantic.dev/2.11/v/int_type
+E               value.str
+E                 Input should be a valid string [type=string_type, input_value=0.8, input_type=float]
+E                   For further information visit https://errors.pydantic.dev/2.11/v/string_type
+
+src\services\vector_service.py:422: ValidationError
+
+---------- coverage: platform win32, python 3.11.10-final-0 ----------
+Name                                         Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------
+src\__init__.py                                  1      0   100%
+src\api\__init__.py                              0      0   100%
+src\api\v1\__init__.py                           0      0   100%
+src\api\v1\endpoints\__init__.py                 0      0   100%
+src\api\v1\endpoints\conversations.py           38     21    45%   22-24, 33-40, 50-57, 68-70, 79-86
+src\api\v1\endpoints\customers.py               40     21    48%   25-27, 36-43, 52-54, 64-71, 80-87
+src\api\v1\endpoints\leads.py                   40     23    42%   23-27, 36-43, 52-54, 64-71, 80-87
+src\api\v1\endpoints\opportunities.py           38     21    45%   23-25, 34-41, 50-52, 62-69, 78-85
+src\api\v1\endpoints\system.py                  57     37    35%   22-71, 80, 103-109, 115-142, 151-158
+src\api\v1\router.py                             8      0   100%
+src\core\__init__.py                             0      0   100%
+src\core\config.py                              86      8    91%   100-103, 117, 122, 132, 137
+src\core\database.py                            38     20    47%   54-61, 66, 71-83, 88-90
+src\core\exceptions.py                          20      3    85%   12-14
+src\main.py                                     44     15    66%   36-43, 75, 85, 91-99
+src\models\__init__.py                           4      0   100%
+src\models\conversation.py                      63      0   100%
+src\models\customer.py                          33      0   100%
+src\models\lead.py                              84      0   100%
+src\models\opportunity.py                      107      0   100%
+src\schemas\__init__.py                          0      0   100%
+src\schemas\conversation.py                     96      0   100%
+src\schemas\customer.py                         54      0   100%
+src\schemas\lead.py                            147      6    96%   98-100, 163-165
+src\schemas\opportunity.py                     233      6    97%   202-204, 208-210
+src\services\__init__.py                         0      0   100%
+src\services\conversation_service.py           128     99    23%   27-28, 38-71, 75-101, 105-148, 156-189, 193-242, 251-299, 307, 316, 324, 333, 341, 351, 361, 369, 373, 381, 385-402
+src\services\conversation_state_tracker.py     234    208    11%   26-29, 38-74, 78-86, 94-140, 149-170, 178-187, 197-223, 231-253, 263-298, 306-332, 341-365, 373-414, 422-474, 478-492, 496-514
+src\services\customer_service.py               117     99    15%   22, 32-53, 57-77, 81-105, 113-141, 145-159, 167-183, 192-208
+src\services\elasticsearch_service.py          202    202     0%   5-610
+src\services\embedding_service.py              177    103    42%   51-53, 57-71, 86-88, 92-103, 116-121, 155, 172-194, 216, 229, 250-264, 283-302, 321-348, 352-368, 372-391, 395-396, 400-402
+src\services\hybrid_search_service.py          243    243     0%   5-634
+src\services\lead_scoring_service.py           243    211    13%   25-26, 30, 137-183, 191-220, 236-253, 262-278, 287-309, 318-348, 357-389, 393-398, 406-415, 419-423, 427-436, 440-460, 469-498, 502-513, 528-551, 555-571, 580-605
+src\services\lead_service.py                   259    237     8%   28, 36-78, 88-113, 122-175, 179-196, 214-324, 332-375, 384-435, 439-516, 526-555
+src\services\llm_service.py                    323    199    38%   92-107, 113-117, 122-146, 167-168, 179-198, 202, 296-297, 370-372, 382, 391, 399, 403-413, 418-425, 434-441, 445, 453-467, 498-585, 597-641, 645, 658, 672-715, 740-827, 837-859, 863-864, 868-870, 874, 878
+src\services\nlu_service.py                    355    355     0%   6-799
+src\services\opportunity_service.py            318    282    11%   33, 37-57, 61-69, 73-81, 85-122, 126-151, 158-159, 163-209, 213-218, 222-232, 244-279, 289-332, 336-399, 411-443, 451-466, 476-546, 564-617, 627-640, 647, 651-674, 678-685, 689-713
+src\services\vector_service.py                 219     48    78%   84, 96-98, 110-112, 119-120, 204-206, 240-272, 306-342, 375, 410-412, 483-505, 607-608
+src\websocket\__init__.py                        0      0   100%
+src\websocket\manager.py                        56     40    29%   21-23, 27-29, 33-39, 43-49, 53-63, 67-77, 81, 85
+--------------------------------------------------------------------------
+TOTAL                                         4105   2507    39%
+Coverage HTML written to dir htmlcov
+Coverage XML written to file coverage.xml
+
+=========================== short test summary info ===========================
+FAILED tests/test_services/test_vector_service.py::TestVectorService::test_add_documents_success
+FAILED tests/test_services/test_vector_service.py::TestVectorService::test_add_documents_create_collection
+FAILED tests/test_services/test_vector_service.py::TestVectorService::test_search_success
+FAILED tests/test_services/test_vector_service.py::TestVectorService::test_search_with_filters
+FAILED tests/test_services/test_vector_service.py::TestVectorService::test_update_document_success
+FAILED tests/test_services/test_vector_service.py::TestVectorService::test_build_filter
+======================== 6 failed, 27 passed in 22.26s ========================

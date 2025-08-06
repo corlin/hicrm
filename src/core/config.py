@@ -51,7 +51,12 @@ class Settings(BaseSettings):
     ENABLE_MCP_TOOLS: bool = True
     
     # 向量数据库配置
-    QDRANT_URL: str = "http://localhost:6333"
+    # Qdrant端口说明:
+    # - 6333: HTTP REST API
+    # - 6334: gRPC API (高性能，当前使用)
+    QDRANT_URL: str = "localhost:6334"  # gRPC连接使用host:port格式
+    QDRANT_USE_GRPC: bool = True  # 启用gRPC连接
+    # 开发环境建议留空，生产环境设置实际API key
     QDRANT_API_KEY: Optional[str] = None
     
     # Elasticsearch配置

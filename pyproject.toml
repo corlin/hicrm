@@ -66,6 +66,7 @@ dependencies = [
     "prometheus-client>=0.19.0,<0.20.0",
     "structlog>=23.2.0,<24.0.0",
     "sentence-transformers>=2.7.0",
+    "requests-toolbelt>=1.0.0",
 ]
 
 [project.optional-dependencies]

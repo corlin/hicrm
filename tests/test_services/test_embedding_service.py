@@ -323,6 +323,7 @@ class TestEmbeddingService:
     async def test_get_model_info(self, service):
         """测试获取模型信息"""
         service._model_loaded = True
+        service.model = Mock()  # Ensure service.model is not None
         service._reranker_loaded = False
         service.cache = {"key1": np.array([1, 2, 3])}
         
@@ -338,6 +339,7 @@ class TestEmbeddingService:
     async def test_get_model_info_embedding_error(self, service):
         """测试获取模型信息时嵌入维度获取失败"""
         service._model_loaded = True
+        service.model = Mock()  # Ensure service.model is not None
         
         with patch.object(service, 'encode', side_effect=Exception("获取维度失败")):
             info = await service.get_model_info()
@@ -367,7 +369,7 @@ class TestEmbeddingService:
     def test_load_embedding_model(self, service):
         """测试加载嵌入模型"""
         with patch('src.services.embedding_service.SentenceTransformer') as mock_st:
-            with patch('src.core.config.settings') as mock_settings:
+            with patch('src.services.embedding_service.settings') as mock_settings: # Patch settings where it's used
                 mock_settings.BGE_MODEL_NAME = "test-model"
                 mock_settings.BGE_DEVICE = "cpu"
                 
@@ -392,7 +394,7 @@ class TestEmbeddingService:
     def test_load_reranker_model(self, service):
         """测试加载重排序模型"""
         with patch('src.services.embedding_service.SentenceTransformer') as mock_st:
-            with patch('src.core.config.settings') as mock_settings:
+            with patch('src.services.embedding_service.settings') as mock_settings: # Patch settings where it's used
                 mock_settings.BGE_RERANKER_MODEL = "test-reranker"
                 mock_settings.BGE_DEVICE = "cpu"
                 
