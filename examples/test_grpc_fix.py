@@ -16,23 +16,25 @@ from src.services.vector_service import vector_service, VectorDocument
 
 async def test_grpc_connection():
     """测试gRPC连接和基本操作"""
-    print("🧪 测试gRPC连接和ID修复")
-    print("=" * 40)
+    from src.utils.unicode_utils import SafeOutput
+    safe_output = SafeOutput()
+    safe_output.safe_print(safe_output.format_status("info", "测试gRPC连接和ID修复", "🧪"))
+    safe_output.safe_print("=" * 40)
     
     try:
         # 1. 测试连接
-        print("1. 测试连接...")
+        safe_output.safe_print("1. 测试连接...")
         await vector_service.initialize()
-        print("   ✅ 连接成功")
+        safe_output.safe_print(f"   {safe_output.format_status('success', '连接成功')}")
         
         # 2. 创建测试集合
         test_collection = "grpc_test"
-        print(f"2. 创建测试集合: {test_collection}")
+        safe_output.safe_print(f"2. 创建测试集合: {test_collection}")
         success = await vector_service.create_collection(test_collection, recreate=True)
         if success:
-            print("   ✅ 集合创建成功")
+            safe_output.safe_print(f"   {safe_output.format_status('success', '集合创建成功')}")
         else:
-            print("   ❌ 集合创建失败")
+            safe_output.safe_print(f"   {safe_output.format_status('error', '集合创建失败')}")
             return False
         
         # 3. 测试文档添加（使用整数ID）
@@ -52,31 +54,31 @@ async def test_grpc_connection():
         
         success = await vector_service.add_documents(test_docs, test_collection)
         if success:
-            print("   ✅ 文档添加成功")
+            safe_output.safe_print(f"   {safe_output.format_status('success', '文档添加成功')}")
         else:
-            print("   ❌ 文档添加失败")
+            safe_output.safe_print(f"   {safe_output.format_status('error', '文档添加失败')}")
             return False
         
         # 4. 测试搜索
         print("4. 测试搜索...")
         results = await vector_service.search("测试", test_collection, limit=2)
         if results:
-            print(f"   ✅ 搜索成功，返回 {len(results)} 个结果")
+            safe_output.safe_print(f"   {safe_output.format_status('success', f'搜索成功，返回 {len(results)} 个结果')}")
             for i, result in enumerate(results, 1):
-                print(f"      结果 {i}: ID={result.document.id}, 内容='{result.document.content}'")
+                safe_output.safe_print(f"      结果 {i}: ID={result.document.id}, 内容='{result.document.content}'")
         else:
-            print("   ⚠️  搜索未返回结果")
+            safe_output.safe_print(f"   {safe_output.format_status('warning', '搜索未返回结果')}")
         
         # 5. 清理
-        print("5. 清理测试集合...")
+        safe_output.safe_print("5. 清理测试集合...")
         await vector_service.delete_collection(test_collection)
-        print("   ✅ 清理完成")
+        safe_output.safe_print(f"   {safe_output.format_status('success', '清理完成')}")
         
-        print("\n🎉 所有测试通过！gRPC连接和ID修复成功")
+        safe_output.safe_print(f"\n{safe_output.format_status('success', '所有测试通过！gRPC连接和ID修复成功', '🎉')}")
         return True
         
     except Exception as e:
-        print(f"\n❌ 测试失败: {e}")
+        safe_output.safe_print(f"\n{safe_output.format_status('error', f'测试失败: {e}')}")
         import traceback
         traceback.print_exc()
         return False

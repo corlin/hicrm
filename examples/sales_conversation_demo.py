@@ -17,6 +17,7 @@ from src.schemas.conversation import (
     ConversationCreate, MessageCreate, MessageRole, 
     ConversationStateUpdate, ConversationStatus
 )
+from src.utils.unicode_utils import SafeOutput
 
 
 class SalesConversationDemo:
@@ -25,6 +26,9 @@ class SalesConversationDemo:
     def __init__(self):
         self.mock_db = self._create_mock_db()
         self.conversation_service = ConversationService(self.mock_db)
+        
+        # Initialize safe output utility
+        self.safe_output = SafeOutput()
         
         # 客户信息
         self.customer_info = {
@@ -77,11 +81,16 @@ class SalesConversationDemo:
         await self.conversation_service.add_message(self.conversation_id, message)
         
         # 显示消息
+        user_symbol = "👤" if self.safe_output.unicode_supported else "[USER]"
+        bot_symbol = "🤖" if self.safe_output.unicode_supported else "[BOT]"
+        system_symbol = "⚙️" if self.safe_output.unicode_supported else "[SYS]"
+        agent_symbol = "🎯" if self.safe_output.unicode_supported else "[AGENT]"
+        
         role_display = {
-            MessageRole.USER: f"👤 {self.customer_info['name']}",
-            MessageRole.ASSISTANT: f"🤖 {agent_type or 'Assistant'}",
-            MessageRole.SYSTEM: "⚙️ System",
-            MessageRole.AGENT: f"🎯 {agent_type or 'Agent'}"
+            MessageRole.USER: f"{user_symbol} {self.customer_info['name']}",
+            MessageRole.ASSISTANT: f"{bot_symbol} {agent_type or 'Assistant'}",
+            MessageRole.SYSTEM: f"{system_symbol} System",
+            MessageRole.AGENT: f"{agent_symbol} {agent_type or 'Agent'}"
         }
         
         print(f"\n{role_display.get(role, role)}: {content}")
@@ -123,8 +132,8 @@ class SalesConversationDemo:
     
     async def initialize_conversation(self):
         """初始化对话"""
-        print("🚀 初始化销售对话...")
-        print("="*60)
+        self.safe_output.safe_print(self.safe_output.format_status("info", "初始化销售对话...", "🚀"))
+        self.safe_output.safe_print("="*60)
         
         # 创建对话
         conversation_data = ConversationCreate(
@@ -158,7 +167,7 @@ class SalesConversationDemo:
         conversation = await self.conversation_service.create_conversation(conversation_data)
         self.conversation_id = "conv-sales-demo-001"
         
-        print(f"✅ 对话创建成功")
+        self.safe_output.safe_print(f"{self.safe_output.format_status('success', '对话创建成功')}")
         print(f"   对话ID: {self.conversation_id}")
         print(f"   客户: {self.customer_info['name']} ({self.customer_info['company']})")
         print(f"   行业: {self.customer_info['industry']}")
@@ -168,9 +177,9 @@ class SalesConversationDemo:
         
     async def stage_1_greeting_and_rapport(self):
         """阶段1: 问候和建立关系"""
-        print(f"\n{'='*60}")
-        print("📞 阶段1: 问候和建立关系")
-        print("="*60)
+        self.safe_output.safe_print(f"\n{'='*60}")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "阶段1: 问候和建立关系", "📞"))
+        self.safe_output.safe_print("="*60)
         
         # 更新对话状态
         await self._update_state(
@@ -209,9 +218,9 @@ class SalesConversationDemo:
         
     async def stage_2_needs_assessment(self):
         """阶段2: 需求评估"""
-        print(f"\n{'='*60}")
-        print("🔍 阶段2: 需求评估")
-        print("="*60)
+        self.safe_output.safe_print(f"\n{'='*60}")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "阶段2: 需求评估", "🔍"))
+        self.safe_output.safe_print("="*60)
         
         # 客户描述现状
         await self._add_message(
@@ -266,7 +275,7 @@ class SalesConversationDemo:
     async def stage_3_solution_presentation(self):
         """阶段3: 解决方案展示"""
         print(f"\n{'='*60}")
-        print("💡 阶段3: 解决方案展示")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "阶段3: 解决方案展示", "💡"))
         print("="*60)
         
         # 销售顾问介绍解决方案
@@ -325,9 +334,9 @@ class SalesConversationDemo:
         
     async def stage_4_objection_handling(self):
         """阶段4: 异议处理"""
-        print(f"\n{'='*60}")
-        print("🤔 阶段4: 异议处理")
-        print("="*60)
+        self.safe_output.safe_print(f"\n{'='*60}")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "阶段4: 异议处理", "🤔"))
+        self.safe_output.safe_print("="*60)
         
         # 客户提出价格关注
         await self._add_message(
@@ -375,9 +384,9 @@ class SalesConversationDemo:
         
     async def stage_5_closing_and_next_steps(self):
         """阶段5: 成交和后续步骤"""
-        print(f"\n{'='*60}")
-        print("🎯 阶段5: 成交和后续步骤")
-        print("="*60)
+        self.safe_output.safe_print(f"\n{'='*60}")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "阶段5: 成交和后续步骤", "🎯"))
+        self.safe_output.safe_print("="*60)
         
         # 客户表示认可
         await self._add_message(
@@ -439,7 +448,7 @@ class SalesConversationDemo:
     async def generate_conversation_summary(self):
         """生成对话总结"""
         print(f"\n{'='*60}")
-        print("📊 对话总结和分析")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "对话总结和分析", "📊"))
         print("="*60)
         
         # 模拟获取对话摘要
@@ -479,36 +488,36 @@ class SalesConversationDemo:
             ]
         }
         
-        print("✅ 对话概览:")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "对话概览:"))
         overview = mock_summary["conversation_overview"]
         print(f"   对话时长: {overview['duration']}")
         print(f"   消息总数: {overview['total_messages']}")
         print(f"   客户参与度: {overview['customer_engagement']}")
         print(f"   对话结果: {overview['outcome']}")
         
-        print(f"\n👤 客户档案:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '客户档案:', '👤')}")
         profile = mock_summary["customer_profile"]
         for key, value in profile.items():
             print(f"   {key}: {value}")
         
-        print(f"\n📋 业务需求:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '业务需求:', '📋')}")
         requirements = mock_summary["business_requirements"]
         print(f"   痛点: {', '.join(requirements['pain_points'])}")
         print(f"   团队规模: {requirements['team_size']}人")
         print(f"   月度线索: {requirements['monthly_leads']}个")
         print(f"   活跃商机: {requirements['active_opportunities']}个")
         
-        print(f"\n📈 销售进展:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '销售进展:', '📈')}")
         progress = mock_summary["sales_progress"]
         for key, value in progress.items():
             print(f"   {key}: {value}")
         
-        print(f"\n💡 关键洞察:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '关键洞察:', '💡')}")
         for insight in mock_summary["key_insights"]:
             print(f"   • {insight}")
         
         # 生成行动建议
-        print(f"\n🎯 后续行动建议:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '后续行动建议:', '🎯')}")
         recommendations = [
             "准备定制化产品演示，重点展示数据整合和报表功能",
             "提前发送演示大纲，包含ROI计算器",
@@ -523,7 +532,7 @@ class SalesConversationDemo:
     
     async def run_demo(self):
         """运行完整的销售对话演示"""
-        print("🎬 开始销售对话演示")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "开始销售对话演示", "🎬"))
         print("="*80)
         print(f"场景: {self.customer_info['company']} CRM系统升级咨询")
         print(f"客户: {self.customer_info['name']} ({self.customer_info['role']})")
@@ -540,12 +549,12 @@ class SalesConversationDemo:
             await self.generate_conversation_summary()
             
             print(f"\n{'='*80}")
-            print("🎉 销售对话演示完成！")
-            print("✅ 成功展示了对话状态管理系统在销售场景中的应用")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "销售对话演示完成！", "🎉"))
+            self.safe_output.safe_print(self.safe_output.format_status("success", "成功展示了对话状态管理系统在销售场景中的应用"))
             print("="*80)
             
         except Exception as e:
-            print(f"\n❌ 演示过程中出现错误: {str(e)}")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('error', f'演示过程中出现错误: {str(e)}')}")
 
 
 async def main():

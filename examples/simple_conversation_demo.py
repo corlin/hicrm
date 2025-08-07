@@ -14,6 +14,7 @@ from src.schemas.conversation import (
     ConversationCreate, MessageCreate, MessageRole, 
     ConversationStateUpdate
 )
+from src.utils.unicode_utils import SafeOutput
 
 
 class SimpleConversationDemo:
@@ -24,6 +25,9 @@ class SimpleConversationDemo:
         self.mock_db = self._create_mock_db()
         self.conversation_service = ConversationService(self.mock_db)
         self._setup_mocks()
+        
+        # Initialize safe output utility
+        self.safe_output = SafeOutput()
         
     def _create_mock_db(self):
         """创建模拟数据库"""
@@ -58,7 +62,7 @@ class SimpleConversationDemo:
     
     async def demo_conversation_creation(self):
         """演示对话创建"""
-        print("🔧 演示对话创建...")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "演示对话创建...", "🔧"))
         
         # 模拟对话创建
         def mock_refresh(obj):
@@ -76,7 +80,7 @@ class SimpleConversationDemo:
         
         conversation = await self.conversation_service.create_conversation(conversation_data)
         
-        print("✅ 对话创建成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "对话创建成功"))
         print(f"   用户ID: {conversation_data.user_id}")
         print(f"   标题: {conversation_data.title}")
         print(f"   初始上下文: {conversation_data.initial_context}")
@@ -85,7 +89,7 @@ class SimpleConversationDemo:
     
     async def demo_message_management(self, conversation_id: str):
         """演示消息管理"""
-        print("\n💬 演示消息管理...")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '演示消息管理...', '💬')}")
         
         # 模拟消息创建
         def mock_refresh_msg(obj):
@@ -106,7 +110,7 @@ class SimpleConversationDemo:
             user_message
         )
         
-        print("✅ 用户消息添加成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "用户消息添加成功"))
         print(f"   内容: {user_message.content}")
         print(f"   角色: {user_message.role}")
         
@@ -124,13 +128,13 @@ class SimpleConversationDemo:
             assistant_message
         )
         
-        print("✅ 助手消息添加成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "助手消息添加成功"))
         print(f"   内容: {assistant_message.content}")
         print(f"   Agent类型: {assistant_message.agent_type}")
     
     async def demo_state_management(self, conversation_id: str):
         """演示状态管理"""
-        print("\n🎯 演示状态管理...")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '演示状态管理...', '🎯')}")
         
         # 更新对话状态
         state_update = ConversationStateUpdate(
@@ -146,7 +150,7 @@ class SimpleConversationDemo:
             state_update
         )
         
-        print("✅ 对话状态更新成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "对话状态更新成功"))
         print(f"   当前任务: {state_update.current_task}")
         print(f"   当前Agent: {state_update.current_agent}")
         print(f"   流程状态: {state_update.flow_state}")
@@ -158,11 +162,11 @@ class SimpleConversationDemo:
             "new_demo_state"
         )
         
-        print("✅ 流程状态更新成功: new_demo_state")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "流程状态更新成功: new_demo_state"))
     
     async def demo_context_management(self, conversation_id: str):
         """演示上下文管理"""
-        print("\n🔧 演示上下文管理...")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '演示上下文管理...', '🔧')}")
         
         # 添加上下文变量
         context_vars = {
@@ -177,18 +181,18 @@ class SimpleConversationDemo:
                 key,
                 value
             )
-            print(f"✅ 上下文变量添加: {key} = {value}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'上下文变量添加: {key} = {value}')}")
         
         # 获取上下文变量
         value = await self.conversation_service.get_context_variable(
             conversation_id,
             "demo_topic"
         )
-        print(f"✅ 上下文变量获取: demo_topic = {value}")
+        self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'上下文变量获取: demo_topic = {value}')}")
     
     async def demo_memory_management(self, conversation_id: str):
         """演示记忆管理"""
-        print("\n🧠 演示记忆管理...")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '演示记忆管理...', '🧠')}")
         
         # 短期记忆
         await self.conversation_service.update_short_term_memory(
@@ -196,13 +200,13 @@ class SimpleConversationDemo:
             "demo_short_term",
             "这是短期记忆内容"
         )
-        print("✅ 短期记忆添加成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "短期记忆添加成功"))
         
         short_memory = await self.conversation_service.get_short_term_memory(
             conversation_id,
             "demo_short_term"
         )
-        print(f"✅ 短期记忆获取: {short_memory}")
+        self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'短期记忆获取: {short_memory}')}")
         
         # 长期记忆
         await self.conversation_service.promote_to_long_term_memory(
@@ -211,17 +215,17 @@ class SimpleConversationDemo:
             {"important": "这是重要的长期记忆", "score": 0.9},
             importance_score=0.9
         )
-        print("✅ 长期记忆添加成功 (重要性: 0.9)")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "长期记忆添加成功 (重要性: 0.9)"))
         
         long_memory = await self.conversation_service.get_long_term_memory(
             conversation_id,
             "demo_long_term"
         )
-        print(f"✅ 长期记忆获取: {long_memory}")
+        self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'长期记忆获取: {long_memory}')}")
     
     async def demo_preference_learning(self, conversation_id: str):
         """演示偏好学习"""
-        print("\n📚 演示偏好学习...")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '演示偏好学习...', '📚')}")
         
         # 学习用户偏好
         interaction_data = {
@@ -235,26 +239,26 @@ class SimpleConversationDemo:
             interaction_data
         )
         
-        print("✅ 用户偏好学习成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "用户偏好学习成功"))
         print(f"   偏好数据: {interaction_data}")
     
     async def demo_conversation_summary(self, conversation_id: str):
         """演示对话摘要"""
-        print("\n📊 演示对话摘要...")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '演示对话摘要...', '📊')}")
         
         summary = await self.conversation_service.get_conversation_summary(
             conversation_id
         )
         
-        print("✅ 对话摘要获取成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "对话摘要获取成功"))
         print(f"   当前状态: {summary['current_state']}")
         print(f"   上下文键: {summary['context_keys']}")
         print(f"   记忆统计: {summary['memory_summary']}")
     
     async def run_demo(self):
         """运行完整演示"""
-        print("🚀 开始简化对话状态管理验证")
-        print("="*60)
+        self.safe_output.safe_print(self.safe_output.format_status("info", "开始简化对话状态管理验证", "🚀"))
+        self.safe_output.safe_print("="*60)
         
         try:
             # 创建对话
@@ -279,12 +283,12 @@ class SimpleConversationDemo:
             await self.demo_conversation_summary(conversation_id)
             
             print("\n" + "="*60)
-            print("🎉 所有功能验证完成！")
-            print("✅ 对话状态管理系统工作正常")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "所有功能验证完成！", "🎉"))
+            self.safe_output.safe_print(self.safe_output.format_status("success", "对话状态管理系统工作正常"))
             print("="*60)
             
         except Exception as e:
-            print(f"\n❌ 验证过程中出现错误: {str(e)}")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('error', f'验证过程中出现错误: {str(e)}')}")
             import traceback
             traceback.print_exc()
 

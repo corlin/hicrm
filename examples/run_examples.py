@@ -19,21 +19,27 @@ from examples.sales_conversation_demo import SalesConversationDemo
 
 async def run_basic_examples():
     """运行基础功能示例"""
-    print("🔧 运行基础功能示例...")
+    from src.utils.unicode_utils import SafeOutput
+    safe_output = SafeOutput()
+    safe_output.safe_print(safe_output.format_status("info", "运行基础功能示例...", "🔧"))
     examples = ConversationStateExamples()
     await examples.run_all_examples()
 
 
 async def run_sales_demo():
     """运行销售对话演示"""
-    print("\n💼 运行销售对话演示...")
+    from src.utils.unicode_utils import SafeOutput
+    safe_output = SafeOutput()
+    safe_output.safe_print(f"\n{safe_output.format_status('info', '运行销售对话演示...', '💼')}")
     demo = SalesConversationDemo()
     await demo.run_demo()
 
 
 async def main():
     """主函数"""
-    print("🚀 对话状态管理系统验证程序")
+    from src.utils.unicode_utils import SafeOutput
+    safe_output = SafeOutput()
+    safe_output.safe_print(safe_output.format_status("info", "对话状态管理系统验证程序", "🚀"))
     print("="*80)
     
     try:
@@ -48,14 +54,14 @@ async def main():
         await run_sales_demo()
         
         print("\n" + "="*80)
-        print("🎉 所有示例程序运行完成！")
-        print("✅ 对话状态管理系统验证成功")
+        safe_output.safe_print(safe_output.format_status("success", "所有示例程序运行完成！", "🎉"))
+        safe_output.safe_print(safe_output.format_status("success", "对话状态管理系统验证成功"))
         print("="*80)
         
     except KeyboardInterrupt:
-        print("\n\n⚠️ 用户中断程序执行")
+        safe_output.safe_print(f"\n\n{safe_output.format_status('warning', '用户中断程序执行')}")
     except Exception as e:
-        print(f"\n❌ 程序执行出错: {str(e)}")
+        safe_output.safe_print(f"\n{safe_output.format_status('error', f'程序执行出错: {str(e)}')}")
         import traceback
         traceback.print_exc()
 

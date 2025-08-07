@@ -46,6 +46,16 @@ class CharacterMap:
             '🔄': '[PROCESSING]',
             '⚙': '[PROCESSING]',
             '⚙️': '[PROCESSING]',
+            
+            # Additional emoji symbols
+            '🔍': '[SEARCH]',
+            '🎯': '[TARGET]',
+            '🤖': '[BOT]',
+            '💭': '[THINKING]',
+            '📊': '[STATS]',
+            '❓': '[?]',
+            '👋': '[BYE]',
+            '⏱️': '[TIME]',
         }
         
         self._progress_symbols = {
@@ -161,8 +171,15 @@ class CharacterMap:
         if unicode_char in self._all_mappings:
             return self._all_mappings[unicode_char]
             
-        # If no mapping found, return a generic placeholder
-        return f"[{ord(unicode_char):04X}]"
+        # If no mapping found, return the original character or a simple fallback
+        try:
+            if len(unicode_char) == 1 and ord(unicode_char) < 128:  # ASCII character
+                return unicode_char
+            else:
+                return '?'  # Simple fallback for unmapped Unicode
+        except (TypeError, ValueError):
+            # Handle multi-character emoji sequences
+            return '?'  # Simple fallback for complex Unicode sequences
     
     def replace_unicode_in_text(self, text: str, unicode_supported: bool = True) -> str:
         """

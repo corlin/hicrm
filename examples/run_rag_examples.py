@@ -14,11 +14,14 @@ from typing import List, Dict, Any
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from src.utils.unicode_utils import SafeOutput
+
 
 class RAGExampleRunner:
     """RAG示例运行器"""
     
     def __init__(self):
+        self.safe_output = SafeOutput()
         self.examples = {
             '1': {
                 'name': 'RAG服务完整演示',
@@ -88,20 +91,20 @@ class RAGExampleRunner:
     def show_menu(self):
         """显示示例菜单"""
         print("\n" + "="*60)
-        print("🤖 RAG服务示例运行器")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "RAG服务示例运行器", "🤖"))
         print("="*60)
         
-        print("\n📋 主要示例:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '主要示例:', '📋')}")
         for key, example in self.examples.items():
             print(f"{key}. {example['name']}")
             print(f"   {example['description']}")
         
-        print(f"\n🔧 特定功能示例:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '特定功能示例:', '🔧')}")
         for key, example in self.specific_examples.items():
             print(f"{key}. {example['name']}")
             print(f"   {example['description']}")
         
-        print(f"\n🚀 批量运行:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '批量运行:', '🚀')}")
         print("a. 运行所有主要示例")
         print("b. 运行所有特定示例")
         print("c. 运行全部示例")
@@ -116,13 +119,13 @@ class RAGExampleRunner:
         all_examples = {**self.examples, **self.specific_examples}
         
         if key not in all_examples:
-            print(f"❌ 示例 '{key}' 不存在")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'示例 \'{key}\' 不存在')}")
             return False
         
         example = all_examples[key]
         
-        print(f"\n🚀 运行示例: {example['name']}")
-        print(f"📝 描述: {example['description']}")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'运行示例: {example[\"name\"]}', '🚀')}")
+        self.safe_output.safe_print(f"{self.safe_output.format_status('info', f'描述: {example[\"description\"]}', '📝')}")
         print("-" * 50)
         
         try:
@@ -144,15 +147,15 @@ class RAGExampleRunner:
             
             if process.returncode == 0:
                 print(stdout.decode('utf-8', errors='ignore'))
-                print(f"✅ 示例 '{example['name']}' 运行成功")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'示例 \'{example[\"name\"]}\' 运行成功')}")
                 return True
             else:
-                print(f"❌ 示例运行失败:")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', '示例运行失败:')}")
                 print(stderr.decode('utf-8', errors='ignore'))
                 return False
                 
         except Exception as e:
-            print(f"❌ 运行示例时出错: {e}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'运行示例时出错: {e}')}")
             return False
     
     async def run_batch(self, batch_type: str):
@@ -167,10 +170,10 @@ class RAGExampleRunner:
             examples_to_run = {**self.examples, **self.specific_examples}
             batch_name = "全部示例"
         else:
-            print(f"❌ 未知的批量类型: {batch_type}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'未知的批量类型: {batch_type}')}")
             return
         
-        print(f"\n🚀 批量运行{batch_name}")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'批量运行{batch_name}', '🚀')}")
         print("="*50)
         
         success_count = 0
@@ -188,14 +191,14 @@ class RAGExampleRunner:
                 print("\n" + "-"*30 + " 下一个示例 " + "-"*30)
                 await asyncio.sleep(1)
         
-        print(f"\n📊 批量运行结果:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '批量运行结果:', '📊')}")
         print(f"  成功: {success_count}/{total_count}")
         print(f"  失败: {total_count - success_count}/{total_count}")
         
         if success_count == total_count:
-            print("🎉 所有示例运行成功！")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "所有示例运行成功！", "🎉"))
         else:
-            print("⚠️ 部分示例运行失败，请检查错误信息")
+            self.safe_output.safe_print(self.safe_output.format_status("warning", "部分示例运行失败，请检查错误信息"))
     
     def show_help(self):
         """显示帮助信息"""
@@ -203,7 +206,7 @@ class RAGExampleRunner:
         print("📖 RAG示例运行器帮助")
         print("="*60)
         
-        print("\n🎯 功能说明:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '功能说明:', '🎯')}")
         print("本工具用于统一运行RAG服务的各种示例程序，包括：")
         print("• 完整功能演示")
         print("• 简化验证程序")
@@ -211,22 +214,22 @@ class RAGExampleRunner:
         print("• 性能测试")
         print("• 特定功能演示")
         
-        print(f"\n🚀 使用方法:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '使用方法:', '🚀')}")
         print("1. 选择要运行的示例编号")
         print("2. 或选择批量运行选项")
         print("3. 查看运行结果和输出")
         
-        print(f"\n📋 示例分类:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '示例分类:', '📋')}")
         print("• 主要示例 (1-5): 核心功能演示")
         print("• 特定示例 (6-10): 针对性功能测试")
         print("• 批量运行 (a-c): 自动运行多个示例")
         
-        print(f"\n💡 提示:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '提示:', '💡')}")
         print("• 首次运行可能需要下载模型")
         print("• 某些示例需要向量数据库支持")
         print("• 可以随时按 Ctrl+C 中断运行")
         
-        print(f"\n🔧 环境要求:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '环境要求:', '🔧')}")
         print("• Python 3.11+")
         print("• uv 包管理器")
         print("• 项目依赖已安装")
@@ -235,7 +238,7 @@ class RAGExampleRunner:
     
     async def interactive_mode(self):
         """交互模式"""
-        print("🎯 欢迎使用RAG示例运行器！")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "欢迎使用RAG示例运行器！", "🎯"))
         print("输入 'h' 查看帮助，输入 'q' 退出")
         
         while True:
@@ -253,28 +256,28 @@ class RAGExampleRunner:
                 elif choice in {**self.examples, **self.specific_examples}:
                     await self.run_example(choice)
                 else:
-                    print(f"❌ 无效选择: '{choice}'")
+                    self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'无效选择: \'{choice}\'')}")
                     print("请输入有效的示例编号或选项")
                 
                 if choice != 'h':
                     input("\n按回车键继续...")
                     
             except KeyboardInterrupt:
-                print("\n👋 用户中断，退出程序")
+                self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '用户中断，退出程序', '👋')}")
                 break
             except Exception as e:
-                print(f"❌ 程序错误: {e}")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'程序错误: {e}')}")
                 input("按回车键继续...")
     
     async def run_single(self, example_key: str):
         """运行单个示例"""
-        print(f"🚀 运行单个示例: {example_key}")
+        self.safe_output.safe_print(f"{self.safe_output.format_status('info', f'运行单个示例: {example_key}', '🚀')}")
         success = await self.run_example(example_key)
         
         if success:
-            print(f"\n✅ 示例运行完成")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('success', '示例运行完成')}")
         else:
-            print(f"\n❌ 示例运行失败")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('error', '示例运行失败')}")
             sys.exit(1)
 
 
@@ -294,7 +297,7 @@ async def main():
         elif arg in {**runner.examples, **runner.specific_examples}:
             await runner.run_single(arg)
         else:
-            print(f"❌ 未知参数: {arg}")
+            runner.safe_output.safe_print(f"{runner.safe_output.format_status('error', f'未知参数: {arg}')}")
             print("使用 'help' 查看帮助信息")
             sys.exit(1)
     else:
@@ -306,7 +309,9 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n👋 程序被用户中断")
+        safe_output = SafeOutput()
+        safe_output.safe_print(f"\n{safe_output.format_status('info', '程序被用户中断', '👋')}")
     except Exception as e:
-        print(f"❌ 程序运行失败: {e}")
+        safe_output = SafeOutput()
+        safe_output.safe_print(f"{safe_output.format_status('error', f'程序运行失败: {e}')}")
         sys.exit(1)

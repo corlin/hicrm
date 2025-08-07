@@ -14,6 +14,7 @@ from src.schemas.conversation import (
     ConversationCreate, MessageCreate, MessageRole, 
     ConversationStateUpdate
 )
+from src.utils.unicode_utils import SafeOutput
 
 
 class ValidationReport:
@@ -24,6 +25,9 @@ class ValidationReport:
         self.conversation_service = ConversationService(self.mock_db)
         self.state_tracker = ConversationStateTracker(self.mock_db)
         self._setup_mocks()
+        
+        # Initialize safe output utility
+        self.safe_output = SafeOutput()
         
         # 测试结果记录
         self.test_results = []
@@ -99,7 +103,7 @@ class ValidationReport:
     
     async def test_conversation_creation(self):
         """测试对话创建功能"""
-        print("🧪 测试对话创建功能...")
+        self.safe_output.safe_print(self.safe_output.format_status("info", "测试对话创建功能...", "🧪"))
         
         try:
             # 模拟对话创建
@@ -124,18 +128,18 @@ class ValidationReport:
             assert self.conversation_service.state_tracker.initialize_conversation_state.called, "状态初始化方法未被调用"
             
             self._record_test("对话创建", True, "成功创建对话并初始化状态")
-            print("✅ 对话创建功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "对话创建功能测试通过"))
             
             return "test-conv-001"
             
         except Exception as e:
             self._record_test("对话创建", False, f"错误: {str(e)}")
-            print(f"❌ 对话创建功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"对话创建功能测试失败: {str(e)}"))
             return None
     
     async def test_message_management(self, conversation_id: str):
         """测试消息管理功能"""
-        print("\n🧪 测试消息管理功能...")
+        self.safe_output.safe_print("\n" + self.safe_output.format_status("info", "测试消息管理功能...", "🧪"))
         
         try:
             # 模拟消息创建
@@ -169,15 +173,15 @@ class ValidationReport:
             assert self.mock_db.add.call_count >= 2, "消息添加次数不足"
             
             self._record_test("消息管理", True, "成功添加用户消息和助手消息")
-            print("✅ 消息管理功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "消息管理功能测试通过"))
             
         except Exception as e:
             self._record_test("消息管理", False, f"错误: {str(e)}")
-            print(f"❌ 消息管理功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"消息管理功能测试失败: {str(e)}"))
     
     async def test_state_management(self, conversation_id: str):
         """测试状态管理功能"""
-        print("\n🧪 测试状态管理功能...")
+        self.safe_output.safe_print("\n" + self.safe_output.format_status("info", "测试状态管理功能...", "🧪"))
         
         try:
             # 测试状态更新
@@ -207,15 +211,15 @@ class ValidationReport:
             assert flow_result is True, "流程状态更新返回失败"
             
             self._record_test("状态管理", True, "成功更新对话状态和流程状态")
-            print("✅ 状态管理功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "状态管理功能测试通过"))
             
         except Exception as e:
             self._record_test("状态管理", False, f"错误: {str(e)}")
-            print(f"❌ 状态管理功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"状态管理功能测试失败: {str(e)}"))
     
     async def test_context_management(self, conversation_id: str):
         """测试上下文管理功能"""
-        print("\n🧪 测试上下文管理功能...")
+        self.safe_output.safe_print("\n" + self.safe_output.format_status("info", "测试上下文管理功能...", "🧪"))
         
         try:
             # 测试添加上下文变量
@@ -243,15 +247,15 @@ class ValidationReport:
             assert retrieved_value is not None, "上下文变量获取失败"
             
             self._record_test("上下文管理", True, f"成功管理 {len(test_contexts)} 个上下文变量")
-            print("✅ 上下文管理功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "上下文管理功能测试通过"))
             
         except Exception as e:
             self._record_test("上下文管理", False, f"错误: {str(e)}")
-            print(f"❌ 上下文管理功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"上下文管理功能测试失败: {str(e)}"))
     
     async def test_memory_management(self, conversation_id: str):
         """测试记忆管理功能"""
-        print("\n🧪 测试记忆管理功能...")
+        self.safe_output.safe_print("\n" + self.safe_output.format_status("info", "测试记忆管理功能...", "🧪"))
         
         try:
             # 测试短期记忆
@@ -307,15 +311,15 @@ class ValidationReport:
             assert retrieved_profile is not None, "长期记忆获取失败"
             
             self._record_test("记忆管理", True, f"成功管理短期记忆 {len(short_term_data)} 项，长期记忆 {len(long_term_data)} 项")
-            print("✅ 记忆管理功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "记忆管理功能测试通过"))
             
         except Exception as e:
             self._record_test("记忆管理", False, f"错误: {str(e)}")
-            print(f"❌ 记忆管理功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"记忆管理功能测试失败: {str(e)}"))
     
     async def test_preference_learning(self, conversation_id: str):
         """测试偏好学习功能"""
-        print("\n🧪 测试偏好学习功能...")
+        self.safe_output.safe_print("\n" + self.safe_output.format_status("info", "测试偏好学习功能...", "🧪"))
         
         try:
             # 测试多种偏好学习场景
@@ -354,15 +358,15 @@ class ValidationReport:
                 assert result is True, f"{scenario['scenario']} 学习失败"
             
             self._record_test("偏好学习", True, f"成功学习 {len(learning_scenarios)} 种偏好模式")
-            print("✅ 偏好学习功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "偏好学习功能测试通过"))
             
         except Exception as e:
             self._record_test("偏好学习", False, f"错误: {str(e)}")
-            print(f"❌ 偏好学习功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"偏好学习功能测试失败: {str(e)}"))
     
     async def test_conversation_summary(self, conversation_id: str):
         """测试对话摘要功能"""
-        print("\n🧪 测试对话摘要功能...")
+        self.safe_output.safe_print("\n" + self.safe_output.format_status("info", "测试对话摘要功能...", "🧪"))
         
         try:
             # 获取对话摘要
@@ -381,15 +385,15 @@ class ValidationReport:
             assert "long_term_items" in summary["memory_summary"], "记忆摘要缺少长期记忆统计"
             
             self._record_test("对话摘要", True, "成功生成完整的对话摘要")
-            print("✅ 对话摘要功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "对话摘要功能测试通过"))
             
         except Exception as e:
             self._record_test("对话摘要", False, f"错误: {str(e)}")
-            print(f"❌ 对话摘要功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"对话摘要功能测试失败: {str(e)}"))
     
     async def test_direct_state_tracker(self):
         """测试直接使用状态跟踪器"""
-        print("\n🧪 测试直接状态跟踪器功能...")
+        self.safe_output.safe_print("\n" + self.safe_output.format_status("info", "测试直接状态跟踪器功能...", "🧪"))
         
         try:
             conversation_id = "direct-test-conv"
@@ -416,36 +420,35 @@ class ValidationReport:
             assert self.state_tracker.update_flow_state.called, "流程状态更新方法未被调用"
             
             self._record_test("直接状态跟踪器", True, "成功直接使用状态跟踪器的所有功能")
-            print("✅ 直接状态跟踪器功能测试通过")
+            self.safe_output.safe_print(self.safe_output.format_status("success", "直接状态跟踪器功能测试通过"))
             
         except Exception as e:
             self._record_test("直接状态跟踪器", False, f"错误: {str(e)}")
-            print(f"❌ 直接状态跟踪器功能测试失败: {str(e)}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"直接状态跟踪器功能测试失败: {str(e)}"))
     
     def generate_report(self):
         """生成验证报告"""
-        print("\n" + "="*80)
-        print("📋 对话状态管理系统验证报告")
-        print("="*80)
+        self.safe_output.safe_print("\n" + self.safe_output.format_section("对话状态管理系统验证报告", 1, 80, "="))
         
         # 总体统计
         success_rate = (self.passed_tests / self.total_tests * 100) if self.total_tests > 0 else 0
-        print(f"\n📊 总体统计:")
-        print(f"   总测试数: {self.total_tests}")
-        print(f"   通过测试: {self.passed_tests}")
-        print(f"   失败测试: {self.total_tests - self.passed_tests}")
-        print(f"   成功率: {success_rate:.1f}%")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '总体统计:', '📊')}")
+        self.safe_output.safe_print(f"   总测试数: {self.total_tests}")
+        self.safe_output.safe_print(f"   通过测试: {self.passed_tests}")
+        self.safe_output.safe_print(f"   失败测试: {self.total_tests - self.passed_tests}")
+        self.safe_output.safe_print(f"   成功率: {success_rate:.1f}%")
         
         # 详细测试结果
-        print(f"\n📝 详细测试结果:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '详细测试结果:', '📝')}")
         for i, result in enumerate(self.test_results, 1):
-            status = "✅ 通过" if result["success"] else "❌ 失败"
-            print(f"   {i}. {result['name']}: {status}")
+            status_type = "success" if result["success"] else "error"
+            status_text = "通过" if result["success"] else "失败"
+            self.safe_output.safe_print(f"   {i}. {result['name']}: {self.safe_output.format_status(status_type, status_text)}")
             if result["details"]:
-                print(f"      详情: {result['details']}")
+                self.safe_output.safe_print(f"      详情: {result['details']}")
         
         # 功能覆盖分析
-        print(f"\n🔍 功能覆盖分析:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '功能覆盖分析:', '🔍')}")
         covered_features = [
             "对话创建和初始化",
             "消息添加和管理",
@@ -460,24 +463,24 @@ class ValidationReport:
         ]
         
         for feature in covered_features:
-            print(f"   ✅ {feature}")
+            self.safe_output.safe_print(f"   {self.safe_output.format_status('success', feature)}")
         
         # 性能和可靠性评估
-        print(f"\n⚡ 性能和可靠性评估:")
-        print(f"   ✅ 所有异步操作正常执行")
-        print(f"   ✅ 模拟数据库交互成功")
-        print(f"   ✅ 错误处理机制有效")
-        print(f"   ✅ 状态一致性维护良好")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '性能和可靠性评估:', '⚡')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '所有异步操作正常执行')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '模拟数据库交互成功')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '错误处理机制有效')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '状态一致性维护良好')}")
         
         # 架构质量评估
-        print(f"\n🏗️ 架构质量评估:")
-        print(f"   ✅ 服务层和数据层分离清晰")
-        print(f"   ✅ 状态跟踪器独立性良好")
-        print(f"   ✅ 接口设计合理易用")
-        print(f"   ✅ 扩展性和维护性良好")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '架构质量评估:', '🏗️')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '服务层和数据层分离清晰')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '状态跟踪器独立性良好')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '接口设计合理易用')}")
+        self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '扩展性和维护性良好')}")
         
         # 建议和改进
-        print(f"\n💡 建议和改进:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '建议和改进:', '💡')}")
         recommendations = [
             "考虑添加状态变更的事件通知机制",
             "实现记忆数据的持久化存储",
@@ -487,23 +490,23 @@ class ValidationReport:
         ]
         
         for i, rec in enumerate(recommendations, 1):
-            print(f"   {i}. {rec}")
+            self.safe_output.safe_print(f"   {i}. {rec}")
         
         # 结论
-        print(f"\n🎯 验证结论:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '验证结论:', '🎯')}")
         if success_rate >= 90:
-            print("   🎉 对话状态管理系统功能完整，质量优秀，可以投入使用！")
+            self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '对话状态管理系统功能完整，质量优秀，可以投入使用！', '🎉')}")
         elif success_rate >= 70:
-            print("   ✅ 对话状态管理系统基本功能正常，建议修复失败的测试后使用。")
+            self.safe_output.safe_print(f"   {self.safe_output.format_status('success', '对话状态管理系统基本功能正常，建议修复失败的测试后使用。')}")
         else:
-            print("   ⚠️ 对话状态管理系统存在较多问题，需要进一步开发和测试。")
+            self.safe_output.safe_print(f"   {self.safe_output.format_status('warning', '对话状态管理系统存在较多问题，需要进一步开发和测试。')}")
         
-        print("="*80)
+        self.safe_output.safe_print("="*80)
     
     async def run_validation(self):
         """运行完整验证"""
-        print("🚀 开始对话状态管理系统全面验证")
-        print("="*80)
+        self.safe_output.safe_print(self.safe_output.format_status("info", "开始对话状态管理系统全面验证", "🚀"))
+        self.safe_output.safe_print("="*80)
         
         try:
             # 创建测试对话
@@ -525,7 +528,7 @@ class ValidationReport:
             self.generate_report()
             
         except Exception as e:
-            print(f"\n❌ 验证过程中出现严重错误: {str(e)}")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('error', f'验证过程中出现严重错误: {str(e)}')}")
             import traceback
             traceback.print_exc()
 

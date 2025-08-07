@@ -15,6 +15,8 @@ from typing import Dict, List, Callable
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from src.utils.unicode_utils import SafeOutput
+
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -24,6 +26,7 @@ class VectorExamplesRunner:
     """向量示例运行器"""
     
     def __init__(self):
+        self.safe_output = SafeOutput()
         self.examples = {
             "1": {
                 "name": "向量数据库服务示例",
@@ -95,25 +98,25 @@ class VectorExamplesRunner:
     
     def display_main_menu(self):
         """显示主菜单"""
-        print("\n" + "="*80)
-        print("🚀 向量数据库和嵌入服务示例运行器")
-        print("="*80)
-        print("请选择要运行的示例类别:")
-        print()
+        self.safe_output.safe_print("\n" + "="*80)
+        self.safe_output.safe_print(self.safe_output.format_status("info", "向量数据库和嵌入服务示例运行器", "🚀"))
+        self.safe_output.safe_print("="*80)
+        self.safe_output.safe_print("请选择要运行的示例类别:")
+        self.safe_output.safe_print()
         
         for key, example in self.examples.items():
-            print(f"{key}. {example['name']}")
-            print(f"   {example['description']}")
-            print()
+            self.safe_output.safe_print(f"{key}. {example['name']}")
+            self.safe_output.safe_print(f"   {example['description']}")
+            self.safe_output.safe_print()
         
-        print("0. 运行所有示例")
-        print("q. 退出")
+        self.safe_output.safe_print("0. 运行所有示例")
+        self.safe_output.safe_print("q. 退出")
         print("-"*80)
     
     def display_sub_menu(self, category_key: str):
         """显示子菜单"""
         category = self.examples[category_key]
-        print(f"\n📋 {category['name']} - 子示例")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'{category[\"name\"]} - 子示例', '📋')}")
         print("="*60)
         
         for key, description in category['sub_examples'].items():
@@ -128,7 +131,7 @@ class VectorExamplesRunner:
     async def run_example(self, module_name: str, sub_example: str = None):
         """运行指定示例"""
         try:
-            print(f"\n🔄 正在运行 {module_name} 示例...")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('processing', f'正在运行 {module_name} 示例...', '🔄')}")
             
             if module_name == "vector_database_examples":
                 from examples.vector_database_examples import run_all_examples, run_specific_example
@@ -158,16 +161,16 @@ class VectorExamplesRunner:
                 else:
                     await run_all_examples()
             
-            print(f"\n✅ {module_name} 示例运行完成!")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('success', f'{module_name} 示例运行完成!')}")
             
         except Exception as e:
-            print(f"\n❌ 运行示例时出错: {e}")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('error', f'运行示例时出错: {e}')}")
             logger.error(f"运行示例失败: {e}")
     
     async def run_all_examples(self):
         """运行所有示例"""
-        print("\n🚀 开始运行所有向量数据库和嵌入服务示例...")
-        print("="*80)
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '开始运行所有向量数据库和嵌入服务示例...', '🚀')}")
+        self.safe_output.safe_print("="*80)
         
         for key, example in self.examples.items():
             print(f"\n📂 正在运行: {example['name']}")
@@ -175,9 +178,9 @@ class VectorExamplesRunner:
             
             try:
                 await self.run_example(example['module'])
-                print(f"✅ {example['name']} 完成")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'{example[\"name\"]} 完成')}")
             except Exception as e:
-                print(f"❌ {example['name']} 失败: {e}")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'{example[\"name\"]} 失败: {e}')}")
                 logger.error(f"示例 {example['name']} 运行失败: {e}")
                 
                 # 询问是否继续
@@ -185,7 +188,7 @@ class VectorExamplesRunner:
                 if continue_choice != 'y':
                     break
         
-        print("\n🎉 所有示例运行完成!")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('success', '所有示例运行完成!', '🎉')}")
     
     async def interactive_mode(self):
         """交互式模式"""
@@ -194,7 +197,7 @@ class VectorExamplesRunner:
             choice = input("请选择 (0-4, q): ").strip().lower()
             
             if choice == 'q':
-                print("👋 再见!")
+                self.safe_output.safe_print(self.safe_output.format_status("info", "再见!", "👋"))
                 break
             elif choice == '0':
                 await self.run_all_examples()
@@ -202,7 +205,7 @@ class VectorExamplesRunner:
             elif choice in self.examples:
                 await self.handle_category_choice(choice)
             else:
-                print("❌ 无效选择，请重试")
+                self.safe_output.safe_print(self.safe_output.format_status("error", "无效选择，请重试"))
     
     async def handle_category_choice(self, category_key: str):
         """处理类别选择"""
@@ -223,13 +226,13 @@ class VectorExamplesRunner:
                 await self.run_example(category['module'], sub_choice)
                 input("\n按回车键继续...")
             else:
-                print("❌ 无效选择，请重试")
+                self.safe_output.safe_print(self.safe_output.format_status("error", "无效选择，请重试"))
     
     def display_help(self):
         """显示帮助信息"""
-        print("\n📖 向量数据库和嵌入服务示例帮助")
-        print("="*60)
-        print("使用方法:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '向量数据库和嵌入服务示例帮助', '📖')}")
+        self.safe_output.safe_print("="*60)
+        self.safe_output.safe_print("使用方法:")
         print("  python run_vector_examples.py              # 交互式模式")
         print("  python run_vector_examples.py --all        # 运行所有示例")
         print("  python run_vector_examples.py --category 1 # 运行指定类别")
@@ -251,26 +254,26 @@ class VectorExamplesRunner:
     async def run_category(self, category_key: str):
         """运行指定类别的所有示例"""
         if category_key not in self.examples:
-            print(f"❌ 无效的类别: {category_key}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'无效的类别: {category_key}')}")
             return
         
         category = self.examples[category_key]
-        print(f"\n🚀 运行类别: {category['name']}")
-        print("="*60)
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'运行类别: {category[\"name\"]}', '🚀')}")
+        self.safe_output.safe_print("="*60)
         
         await self.run_example(category['module'])
     
     def check_environment(self):
         """检查运行环境"""
-        print("\n🔍 检查运行环境...")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '检查运行环境...', '🔍')}")
         
         # 检查Python版本
         python_version = sys.version_info
         if python_version < (3, 11):
-            print(f"⚠️  Python版本过低: {python_version.major}.{python_version.minor}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('warning', f'Python版本过低: {python_version.major}.{python_version.minor}')}")
             print("   建议使用Python 3.11+")
         else:
-            print(f"✅ Python版本: {python_version.major}.{python_version.minor}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'Python版本: {python_version.major}.{python_version.minor}')}")
         
         # 检查必要的模块
         required_modules = [
@@ -281,19 +284,19 @@ class VectorExamplesRunner:
         for module in required_modules:
             try:
                 __import__(module)
-                print(f"✅ {module} 模块可用")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'{module} 模块可用')}")
             except ImportError:
                 missing_modules.append(module)
-                print(f"❌ {module} 模块缺失")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'{module} 模块缺失')}")
         
         if missing_modules:
-            print(f"\n⚠️  缺失模块: {missing_modules}")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('warning', f'缺失模块: {missing_modules}')}")
             print("请运行: uv sync")
         
         # 检查服务连接 (简单检查)
-        print("\n📡 服务连接检查:")
-        print("   请确保以下服务正在运行:")
-        print("   - Qdrant: localhost:6334")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '服务连接检查:', '📡')}")
+        self.safe_output.safe_print("   请确保以下服务正在运行:")
+        self.safe_output.safe_print("   - Qdrant: localhost:6334")
         print("   - Elasticsearch: localhost:9200")
         print("   详细连接测试将在示例运行时进行")
 
@@ -320,12 +323,12 @@ async def main():
             runner.check_environment()
             return
         else:
-            print(f"❌ 未知参数: {arg}")
+            runner.safe_output.safe_print(f"{runner.safe_output.format_status('error', f'未知参数: {arg}')}")
             runner.display_help()
             return
     
     # 默认交互式模式
-    print("🎯 启动交互式模式...")
+    runner.safe_output.safe_print(runner.safe_output.format_status("info", "启动交互式模式...", "🎯"))
     runner.check_environment()
     await runner.interactive_mode()
 
@@ -334,8 +337,10 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n\n👋 用户中断，程序退出")
+        safe_output = SafeOutput()
+        safe_output.safe_print(f"\n\n{safe_output.format_status('info', '用户中断，程序退出', '👋')}")
     except Exception as e:
-        print(f"\n❌ 程序运行出错: {e}")
+        safe_output = SafeOutput()
+        safe_output.safe_print(f"\n{safe_output.format_status('error', f'程序运行出错: {e}')}")
         logger.error(f"程序异常: {e}")
         sys.exit(1)

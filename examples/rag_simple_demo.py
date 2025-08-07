@@ -15,16 +15,67 @@ from typing import List, Dict, Any
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.services.rag_service import (
-    RAGService, RAGConfig, RAGMode,
-    ChineseTextSplitter, ContextWindowManager, ResultFusion
-)
+# Import Unicode utilities for safe output
+from src.utils.unicode_utils import SafeOutput
+
+# Mock classes for demo purposes to avoid external dependencies
+class RAGMode:
+    SIMPLE = "simple"
+    FUSION = "fusion"
+    RERANK = "rerank"
+    HYBRID = "hybrid"
+
+class RAGConfig:
+    def __init__(self, chunk_size=100, top_k=3, enable_reranking=False, enable_fusion=False):
+        self.chunk_size = chunk_size
+        self.top_k = top_k
+        self.enable_reranking = enable_reranking
+        self.enable_fusion = enable_fusion
+
+class RAGService:
+    def __init__(self, config):
+        self.config = config
+
+class ChineseTextSplitter:
+    def __init__(self, chunk_size=100, chunk_overlap=0):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+    
+    def split_text(self, text):
+        # Simple text splitting for demo
+        sentences = text.split('。')
+        chunks = []
+        current_chunk = ""
+        
+        for sentence in sentences:
+            if sentence.strip():
+                if len(current_chunk + sentence) < self.chunk_size:
+                    current_chunk += sentence + "。"
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = sentence + "。"
+        
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        
+        return chunks if chunks else [text]
+
+class ContextWindowManager:
+    def __init__(self, max_tokens=200):
+        self.max_tokens = max_tokens
+
+class ResultFusion:
+    def __init__(self):
+        self.fusion_methods = ["rrf", "weighted", "linear"]
 
 
 class SimpleRAGDemo:
     """简化的RAG演示类"""
     
     def __init__(self):
+        # Initialize safe output utility with proper encoding setup
+        self.safe_output = SafeOutput(auto_setup=True)
         self.demo_data = self._prepare_demo_data()
         
     def _prepare_demo_data(self) -> Dict[str, Any]:
@@ -56,8 +107,8 @@ class SimpleRAGDemo:
     
     async def run_demo(self):
         """运行完整演示"""
-        print("[启动] RAG服务简化演示")
-        print("=" * 50)
+        self.safe_output.safe_print("[启动] RAG服务简化演示")
+        self.safe_output.safe_print("=" * 50)
         
         try:
             # 1. 基础功能测试
@@ -72,16 +123,16 @@ class SimpleRAGDemo:
             # 4. 端到端演示
             await self.test_end_to_end()
             
-            print("\n✅ 所有演示完成！")
+            self.safe_output.safe_print("\n" + self.safe_output.format_status("success", "所有演示完成！"))
             
         except Exception as e:
-            print(f"❌ 演示失败: {e}")
+            self.safe_output.safe_print(self.safe_output.format_status("error", f"演示失败: {e}"))
             raise
     
     async def test_basic_components(self):
         """测试基础组件"""
-        print("\n[组件] 1. 基础组件测试")
-        print("-" * 30)
+        self.safe_output.safe_print("\n[组件] 1. 基础组件测试")
+        self.safe_output.safe_print("-" * 30)
         
         # 测试RAG配置
         config = RAGConfig(
@@ -90,30 +141,29 @@ class SimpleRAGDemo:
             enable_reranking=False,
             enable_fusion=False
         )
-        print(f"[成功] RAG配置创建: 块大小={config.chunk_size}, 检索数={config.top_k}")
+        self.safe_output.safe_print(f"[成功] RAG配置创建: 块大小={config.chunk_size}, 检索数={config.top_k}")
         
         # 测试RAG服务
         service = RAGService(config)
-        print(f"✅ RAG服务创建: 配置加载成功")
+        self.safe_output.safe_print(self.safe_output.format_status("success", "RAG服务创建: 配置加载成功"))
         
         # 测试文本分割器
         splitter = ChineseTextSplitter(chunk_size=50)
         test_text = "这是第一句。这是第二句。这是第三句。"
         chunks = splitter.split_text(test_text)
-        print(f"✅ 文本分割器: {len(chunks)}个块")
+        self.safe_output.safe_print(self.safe_output.format_status("success", f"文本分割器: {len(chunks)}个块"))
         
         # 测试上下文管理器
         manager = ContextWindowManager(max_tokens=200)
-        print(f"✅ 上下文管理器: 最大{manager.max_tokens}tokens")
+        self.safe_output.safe_print(self.safe_output.format_status("success", f"上下文管理器: 最大{manager.max_tokens}tokens"))
         
         # 测试结果融合器
         fusion = ResultFusion()
-        print(f"✅ 结果融合器: 支持{len(fusion.fusion_methods)}种融合方法")
+        self.safe_output.safe_print(self.safe_output.format_status("success", f"结果融合器: 支持{len(fusion.fusion_methods)}种融合方法"))
     
     async def test_text_processing(self):
         """测试文本处理"""
-        print("\n📝 2. 文本处理测试")
-        print("-" * 30)
+        self.safe_output.safe_print("\n" + self.safe_output.format_section("2. 文本处理测试", 2))
         
         splitter = ChineseTextSplitter(chunk_size=80, chunk_overlap=10)
         
@@ -121,17 +171,16 @@ class SimpleRAGDemo:
             content = doc['content']
             chunks = splitter.split_text(content)
             
-            print(f"\n文档 {i+1}: {doc['metadata']['title']}")
-            print(f"  原文长度: {len(content)} 字符")
-            print(f"  分割结果: {len(chunks)} 个块")
+            self.safe_output.safe_print(f"\n文档 {i+1}: {doc['metadata']['title']}")
+            self.safe_output.safe_print(f"  原文长度: {len(content)} 字符")
+            self.safe_output.safe_print(f"  分割结果: {len(chunks)} 个块")
             
             for j, chunk in enumerate(chunks):
-                print(f"    块{j+1}: {chunk[:30]}...")
+                self.safe_output.safe_print(f"    块{j+1}: {chunk[:30]}...")
     
     async def test_retrieval_modes(self):
         """测试检索模式"""
-        print("\n🔍 3. 检索模式测试")
-        print("-" * 30)
+        self.safe_output.safe_print("\n" + self.safe_output.format_section("3. 检索模式测试", 2))
         
         modes = [
             (RAGMode.SIMPLE, "简单检索"),
@@ -143,7 +192,9 @@ class SimpleRAGDemo:
         query = "CRM系统的功能"
         
         for mode, mode_name in modes:
-            print(f"\n🎯 {mode_name} ({mode.value}):")
+            # Use a target symbol for mode indication
+            target_symbol = "🎯" if self.safe_output.unicode_supported else "[TARGET]"
+            self.safe_output.safe_print(f"\n{target_symbol} {mode_name} ({mode}):")
             
             # 模拟检索过程
             start_time = time.time()
@@ -164,29 +215,32 @@ class SimpleRAGDemo:
             
             process_time = time.time() - start_time
             
-            print(f"  查询: '{query}'")
-            print(f"  结果数: {result_count}")
-            print(f"  平均分数: {avg_score:.2f}")
-            print(f"  处理时间: {process_time*1000:.1f}ms")
+            self.safe_output.safe_print(f"  查询: '{query}'")
+            self.safe_output.safe_print(f"  结果数: {result_count}")
+            self.safe_output.safe_print(f"  平均分数: {avg_score:.2f}")
+            self.safe_output.safe_print(f"  处理时间: {process_time*1000:.1f}ms")
             
             # 模拟结果
             for i in range(min(result_count, len(self.demo_data['documents']))):
                 doc = self.demo_data['documents'][i]
                 score = avg_score - i * 0.05
-                print(f"    {i+1}. {doc['metadata']['title']} (分数: {score:.2f})")
+                self.safe_output.safe_print(f"    {i+1}. {doc['metadata']['title']} (分数: {score:.2f})")
     
     async def test_end_to_end(self):
         """测试端到端流程"""
-        print("\n🤖 4. 端到端问答演示")
-        print("-" * 30)
+        # Use robot symbol for end-to-end testing
+        robot_symbol = "🤖" if self.safe_output.unicode_supported else "[BOT]"
+        self.safe_output.safe_print(f"\n{robot_symbol} 4. 端到端问答演示")
+        self.safe_output.safe_print("-" * 30)
         
         # 模拟RAG问答流程
         for i, question in enumerate(self.demo_data['questions']):
-            print(f"\n问题 {i+1}: {question}")
-            print("-" * 25)
+            self.safe_output.safe_print(f"\n问题 {i+1}: {question}")
+            self.safe_output.safe_print("-" * 25)
             
             # 模拟检索阶段
-            print("🔍 检索阶段:")
+            search_symbol = "🔍" if self.safe_output.unicode_supported else "[SEARCH]"
+            self.safe_output.safe_print(f"{search_symbol} 检索阶段:")
             retrieval_time = 0.12 + i * 0.02
             
             # 根据问题匹配相关文档
@@ -196,14 +250,15 @@ class SimpleRAGDemo:
                 if self._is_relevant(question, doc['content']):
                     relevant_docs.append(doc)
             
-            print(f"  检索时间: {retrieval_time*1000:.0f}ms")
-            print(f"  找到文档: {len(relevant_docs)}个")
+            self.safe_output.safe_print(f"  检索时间: {retrieval_time*1000:.0f}ms")
+            self.safe_output.safe_print(f"  找到文档: {len(relevant_docs)}个")
             
             for j, doc in enumerate(relevant_docs[:2]):
-                print(f"    {j+1}. {doc['metadata']['title']}")
+                self.safe_output.safe_print(f"    {j+1}. {doc['metadata']['title']}")
             
             # 模拟生成阶段
-            print("\n💭 生成阶段:")
+            thinking_symbol = "💭" if self.safe_output.unicode_supported else "[THINKING]"
+            self.safe_output.safe_print(f"\n{thinking_symbol} 生成阶段:")
             generation_time = 0.25 + i * 0.03
             
             # 生成模拟回答
@@ -215,19 +270,21 @@ class SimpleRAGDemo:
             
             answer = answers.get(question, '基于检索到的信息，我可以为您提供相关回答。')
             
-            print(f"  生成时间: {generation_time*1000:.0f}ms")
-            print(f"  总耗时: {(retrieval_time + generation_time)*1000:.0f}ms")
+            self.safe_output.safe_print(f"  生成时间: {generation_time*1000:.0f}ms")
+            self.safe_output.safe_print(f"  总耗时: {(retrieval_time + generation_time)*1000:.0f}ms")
             
-            print(f"\n💡 回答:")
-            print(f"  {answer}")
+            lightbulb_symbol = "💡" if self.safe_output.unicode_supported else "[IDEA]"
+            self.safe_output.safe_print(f"\n{lightbulb_symbol} 回答:")
+            self.safe_output.safe_print(f"  {answer}")
             
             # 计算置信度
             confidence = 0.85 + (len(relevant_docs) * 0.05)
             confidence = min(confidence, 0.95)
             
-            print(f"\n📊 质量指标:")
-            print(f"  置信度: {confidence:.2f}")
-            print(f"  相关文档: {len(relevant_docs)}个")
+            chart_symbol = "📊" if self.safe_output.unicode_supported else "[STATS]"
+            self.safe_output.safe_print(f"\n{chart_symbol} 质量指标:")
+            self.safe_output.safe_print(f"  置信度: {confidence:.2f}")
+            self.safe_output.safe_print(f"  相关文档: {len(relevant_docs)}个")
             
             if confidence > 0.8:
                 quality = "高质量"
@@ -236,7 +293,7 @@ class SimpleRAGDemo:
             else:
                 quality = "需要改进"
             
-            print(f"  回答质量: {quality}")
+            self.safe_output.safe_print(f"  回答质量: {quality}")
     
     def _is_relevant(self, question: str, content: str) -> bool:
         """简单的相关性判断"""
@@ -259,8 +316,9 @@ class SimpleRAGDemo:
     
     async def run_performance_test(self):
         """运行性能测试"""
-        print("\n⚡ 性能测试")
-        print("-" * 30)
+        lightning_symbol = "⚡" if self.safe_output.unicode_supported else "[FAST]"
+        self.safe_output.safe_print(f"\n{lightning_symbol} 性能测试")
+        self.safe_output.safe_print("-" * 30)
         
         # 测试不同配置的性能
         configs = [
@@ -272,7 +330,8 @@ class SimpleRAGDemo:
         config_names = ["轻量级", "标准", "高精度"]
         
         for config, name in zip(configs, config_names):
-            print(f"\n📊 {name}配置:")
+            chart_symbol = "📊" if self.safe_output.unicode_supported else "[STATS]"
+            self.safe_output.safe_print(f"\n{chart_symbol} {name}配置:")
             
             # 模拟性能指标
             base_time = 0.1
@@ -288,28 +347,32 @@ class SimpleRAGDemo:
             if config.enable_fusion:
                 accuracy += 0.05
             
-            print(f"  响应时间: {base_time*1000:.0f}ms")
-            print(f"  准确率: {accuracy:.2f}")
-            print(f"  内存使用: ~{config.chunk_size * 0.01:.1f}MB")
+            self.safe_output.safe_print(f"  响应时间: {base_time*1000:.0f}ms")
+            self.safe_output.safe_print(f"  准确率: {accuracy:.2f}")
+            self.safe_output.safe_print(f"  内存使用: ~{config.chunk_size * 0.01:.1f}MB")
     
     async def run_interactive_demo(self):
         """运行交互式演示"""
-        print("\n🎯 交互式问答演示")
-        print("-" * 30)
-        print("输入问题进行测试，输入 'quit' 退出")
+        target_symbol = "🎯" if self.safe_output.unicode_supported else "[TARGET]"
+        self.safe_output.safe_print(f"\n{target_symbol} 交互式问答演示")
+        self.safe_output.safe_print("-" * 30)
+        self.safe_output.safe_print("输入问题进行测试，输入 'quit' 退出")
         
         while True:
             try:
-                question = input("\n❓ 请输入问题: ").strip()
+                question_symbol = "❓" if self.safe_output.unicode_supported else "[?]"
+                question = input(f"\n{question_symbol} 请输入问题: ").strip()
                 
                 if question.lower() in ['quit', 'exit', '退出']:
-                    print("👋 演示结束！")
+                    wave_symbol = "👋" if self.safe_output.unicode_supported else "[BYE]"
+                    self.safe_output.safe_print(f"{wave_symbol} 演示结束！")
                     break
                 
                 if not question:
                     continue
                 
-                print(f"\n🔍 正在处理问题: '{question}'")
+                search_symbol = "🔍" if self.safe_output.unicode_supported else "[SEARCH]"
+                self.safe_output.safe_print(f"\n{search_symbol} 正在处理问题: '{question}'")
                 
                 # 模拟处理过程
                 await asyncio.sleep(0.2)  # 模拟检索时间
@@ -324,23 +387,31 @@ class SimpleRAGDemo:
                 else:
                     answer = f"关于'{question}'的问题，我会基于知识库为您提供相关信息。"
                 
-                print(f"💡 回答: {answer}")
-                print(f"⏱️ 处理时间: 200ms")
-                print(f"📊 置信度: 0.82")
+                lightbulb_symbol = "💡" if self.safe_output.unicode_supported else "[IDEA]"
+                self.safe_output.safe_print(f"{lightbulb_symbol} 回答: {answer}")
+                
+                clock_symbol = "⏱️" if self.safe_output.unicode_supported else "[TIME]"
+                self.safe_output.safe_print(f"{clock_symbol} 处理时间: 200ms")
+                
+                chart_symbol = "📊" if self.safe_output.unicode_supported else "[STATS]"
+                self.safe_output.safe_print(f"{chart_symbol} 置信度: 0.82")
                 
             except KeyboardInterrupt:
-                print("\n👋 演示结束！")
+                wave_symbol = "👋" if self.safe_output.unicode_supported else "[BYE]"
+                self.safe_output.safe_print(f"\n{wave_symbol} 演示结束！")
                 break
             except Exception as e:
-                print(f"❌ 处理错误: {e}")
+                self.safe_output.safe_print(self.safe_output.format_status("error", f"处理错误: {e}"))
 
 
 async def main():
     """主函数"""
+    # Initialize safe output for main function
+    safe_output = SafeOutput(auto_setup=True)
     demo = SimpleRAGDemo()
     
-    print("欢迎使用RAG服务简化演示！")
-    print("本演示展示RAG系统的核心功能，无需外部依赖。")
+    safe_output.safe_print("欢迎使用RAG服务简化演示！")
+    safe_output.safe_print("本演示展示RAG系统的核心功能，无需外部依赖。")
     
     if len(sys.argv) > 1:
         mode = sys.argv[1].lower()
@@ -352,8 +423,8 @@ async def main():
         elif mode == 'basic':
             await demo.test_basic_components()
         else:
-            print(f"未知模式: {mode}")
-            print("可用模式: basic, performance, interactive")
+            safe_output.safe_print(f"未知模式: {mode}")
+            safe_output.safe_print("可用模式: basic, performance, interactive")
     else:
         # 运行完整演示
         await demo.run_demo()
@@ -363,7 +434,12 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n👋 演示被用户中断")
+        # Initialize safe output for exception handling
+        safe_output = SafeOutput(auto_setup=True)
+        wave_symbol = "👋" if safe_output.unicode_supported else "[BYE]"
+        safe_output.safe_print(f"\n{wave_symbol} 演示被用户中断")
     except Exception as e:
-        print(f"❌ 演示失败: {e}")
+        # Initialize safe output for exception handling
+        safe_output = SafeOutput(auto_setup=True)
+        safe_output.safe_print(safe_output.format_status("error", f"演示失败: {e}"))
         sys.exit(1)
