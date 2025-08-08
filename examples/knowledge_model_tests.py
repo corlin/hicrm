@@ -20,6 +20,7 @@ from src.models.knowledge import (
     # 请求模型
     KnowledgeUpdateRequest
 )
+from src.utils.unicode_utils import SafeOutput
 
 
 class KnowledgeModelTester:
@@ -27,6 +28,7 @@ class KnowledgeModelTester:
     
     def __init__(self):
         self.test_results = []
+        self.safe_output = SafeOutput()
         
     def run_all_tests(self):
         """运行所有测试"""
@@ -63,7 +65,7 @@ class KnowledgeModelTester:
     
     def test_knowledge_metadata(self):
         """测试知识元数据模型"""
-        print("\n📋 1. 测试 KnowledgeMetadata 模型")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '1. 测试 KnowledgeMetadata 模型', '📋')}")
         print("-" * 40)
         
         try:
@@ -79,7 +81,7 @@ class KnowledgeModelTester:
                 keywords=["关键词1", "关键词2", "关键词3"]
             )
             
-            print(f"✅ 基本创建成功")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', '基本创建成功')}")
             print(f"   来源: {metadata.source}")
             print(f"   作者: {metadata.author}")
             print(f"   领域: {metadata.domain}")
@@ -94,7 +96,7 @@ class KnowledgeModelTester:
                 domain="domain"
             )
             
-            print(f"✅ 默认值测试成功")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', '默认值测试成功')}")
             print(f"   默认语言: {minimal_metadata.language}")
             print(f"   默认版本: {minimal_metadata.version}")
             print(f"   默认置信度: {minimal_metadata.confidence}")
@@ -105,26 +107,26 @@ class KnowledgeModelTester:
             json_str = metadata.model_dump_json()
             restored = KnowledgeMetadata.model_validate_json(json_str)
             
-            print(f"✅ JSON序列化测试成功")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', 'JSON序列化测试成功')}")
             print(f"   原始置信度: {metadata.confidence}")
             print(f"   恢复置信度: {restored.confidence}")
             
             self.add_test_result("KnowledgeMetadata", True, "所有测试通过")
             
         except Exception as e:
-            print(f"❌ 测试失败: {e}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'测试失败: {e}')}")
             self.add_test_result("KnowledgeMetadata", False, str(e))
     
     def test_usage_statistics(self):
         """测试使用统计模型"""
-        print("\n📊 2. 测试 UsageStatistics 模型")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '2. 测试 UsageStatistics 模型', '📊')}")
         print("-" * 40)
         
         try:
             # 默认创建
             usage = UsageStatistics()
             
-            print(f"✅ 默认创建成功")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', '默认创建成功')}")
             print(f"   查看次数: {usage.view_count}")
             print(f"   搜索次数: {usage.search_count}")
             print(f"   引用次数: {usage.reference_count}")
@@ -144,7 +146,7 @@ class KnowledgeModelTester:
                 last_accessed=datetime.now()
             )
             
-            print(f"✅ 带数据创建成功")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', '带数据创建成功')}")
             print(f"   查看次数: {usage_with_data.view_count}")
             print(f"   搜索次数: {usage_with_data.search_count}")
             print(f"   正面反馈率: {usage_with_data.positive_feedback/usage_with_data.feedback_count:.1%}")
@@ -152,19 +154,19 @@ class KnowledgeModelTester:
             # 验证约束
             try:
                 invalid_usage = UsageStatistics(view_count=-1)
-                print("❌ 约束验证失败")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', '约束验证失败')}")
             except Exception:
-                print("✅ 负数约束验证成功")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('success', '负数约束验证成功')}")
             
             self.add_test_result("UsageStatistics", True, "所有测试通过")
             
         except Exception as e:
-            print(f"❌ 测试失败: {e}")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'测试失败: {e}')}")
             self.add_test_result("UsageStatistics", False, str(e))
     
     def test_quality_metrics(self):
         """测试质量指标模型"""
-        print("\n⭐ 3. 测试 QualityMetrics 模型")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '3. 测试 QualityMetrics 模型', '⭐')}")
         print("-" * 40)
         
         try:
@@ -179,7 +181,7 @@ class KnowledgeModelTester:
                 last_evaluated=datetime.now()
             )
             
-            print(f"✅ 质量指标创建成功")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', '质量指标创建成功')}")
             print(f"   准确性: {quality.accuracy_score}")
             print(f"   完整性: {quality.completeness_score}")
             print(f"   相关性: {quality.relevance_score}")
@@ -199,9 +201,9 @@ class KnowledgeModelTester:
                     overall_score=0.5,
                     last_evaluated=datetime.now()
                 )
-                print("❌ 分数范围约束验证失败")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', '分数范围约束验证失败')}")
             except Exception:
-                print("✅ 分数范围约束验证成功")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('success', '分数范围约束验证成功')}")
             
             self.add_test_result("QualityMetrics", True, "所有测试通过")
             

@@ -3,6 +3,23 @@ Character mapping system for Unicode to ASCII fallbacks.
 
 This module provides comprehensive mappings from Unicode characters to ASCII
 alternatives, organized by symbol categories for easy maintenance and extension.
+
+The CharacterMap class manages three categories of symbols:
+- Status symbols: Success, error, warning, info indicators
+- Progress symbols: Progress bars, arrows, bullets
+- Decoration symbols: Borders, frames, geometric shapes
+
+Example:
+    >>> char_map = CharacterMap()
+    >>> char_map.get_symbol("✅", unicode_supported=False)
+    '[OK]'
+    >>> char_map.replace_unicode_in_text("Status: ✅ Success", unicode_supported=False)
+    'Status: [OK] Success'
+
+Platform Considerations:
+    - Windows GBK encoding: Most Unicode symbols will use ASCII fallbacks
+    - macOS/Linux UTF-8: Unicode symbols typically display correctly
+    - SSH/Remote sessions: May have different encoding capabilities
 """
 
 from typing import Dict, Optional, Union
@@ -17,7 +34,17 @@ class CharacterMap:
     """
     
     def __init__(self):
-        """Initialize the character mapping system with predefined mappings."""
+        """
+        Initialize the character mapping system with predefined mappings.
+        
+        Creates comprehensive Unicode to ASCII mappings organized by category:
+        - Status symbols: ✅→[OK], ❌→[ERROR], ⚠️→[WARNING], etc.
+        - Progress symbols: █→#, ░→., →→->, •→*, etc.
+        - Decoration symbols: ─→-, ═→=, │→|, etc.
+        
+        The mappings are designed to preserve semantic meaning while ensuring
+        compatibility with ASCII-only console environments.
+        """
         self._status_symbols = {
             # Success/positive status symbols
             '✅': '[OK]',

@@ -1,0 +1,266 @@
+name: Unicode Utilities Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/utils/unicode_utils/**'
+      - 'tests/test_unicode*.py'
+      - 'tests/test_*unicode*.py'
+      - 'tests/fixtures/**'
+      - '.github/workflows/unicode_tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/utils/unicode_utils/**'
+      - 'tests/test_unicode*.py'
+      - 'tests/test_*unicode*.py'
+      - 'tests/fixtures/**'
+      - '.github/workflows/unicode_tests.yml'
+
+jobs:
+  test-cross-platform:
+    name: Test on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Reduce matrix size for faster CI
+          - os: macos-latest
+            python-version: '3.8'
+          - os: macos-latest
+            python-version: '3.9'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov pytest-timeout
+        pip install -r requirements.txt
+    
+    - name: Create test logs directory
+      run: mkdir -p tests/logs
+    
+    - name: Run unit tests
+      run: |
+        python -m pytest tests/test_character_map.py tests/test_console_handler.py tests/test_safe_output.py -v --tb=short
+    
+    - name: Run integration tests
+      run: |
+        python -m pytest tests/test_unicode_utils_integration.py -v --tb=short
+    
+    - name: Run cross-platform tests
+      run: |
+        python -m pytest tests/test_unicode_cross_platform.py -v --tb=short
+    
+    - name: Run backwards compatibility tests
+      run: |
+        python -m pytest tests/test_unicode_backwards_compatibility.py -v --tb=short
+    
+    - name: Run CI/CD tests
+      run: |
+        python -m pytest tests/test_unicode_ci_cd.py -v --tb=short
+      env:
+        CI: true
+        GITHUB_ACTIONS: true
+    
+    - name: Upload test logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-logs-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: tests/logs/
+        retention-days: 7
+
+  test-performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-benchmark pytest-timeout
+        pip install -r requirements.txt
+    
+    - name: Create test logs directory
+      run: mkdir -p tests/logs
+    
+    - name: Run performance tests
+      run: |
+        python -m pytest tests/test_performance/test_unicode_performance.py -v --tb=short --timeout=300
+    
+    - name: Upload performance results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: tests/logs/
+        retention-days: 30
+
+  test-encoding-scenarios:
+    name: Test Encoding Scenarios
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        locale: ['C', 'en_US.UTF-8', 'zh_CN.GBK']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-timeout
+        pip install -r requirements.txt
+    
+    - name: Install locale support
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y locales
+        sudo locale-gen ${{ matrix.locale }} || true
+    
+    - name: Run encoding tests
+      run: |
+        export LC_ALL=${{ matrix.locale }}
+        export LANG=${{ matrix.locale }}
+        python -m pytest tests/test_unicode_cross_platform.py::TestEncodingScenarios -v --tb=short
+      continue-on-error: true
+
+  test-docker:
+    name: Test in Docker Container
+    runs-on: ubuntu-latest
+    
+    container:
+      image: python:3.11-slim
+      env:
+        PYTHONIOENCODING: utf-8
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-timeout
+        pip install -r requirements.txt
+    
+    - name: Create test logs directory
+      run: mkdir -p tests/logs
+    
+    - name: Run Docker-specific tests
+      run: |
+        python -m pytest tests/test_unicode_ci_cd.py::TestDockerEnvironmentCompatibility -v --tb=short
+      env:
+        container: docker
+
+  comprehensive-test:
+    name: Comprehensive Test Suite
+    runs-on: ubuntu-latest
+    needs: [test-cross-platform, test-performance, test-encoding-scenarios]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov pytest-timeout pytest-xdist
+        pip install -r requirements.txt
+    
+    - name: Create test logs directory
+      run: mkdir -p tests/logs
+    
+    - name: Run comprehensive test suite
+      run: |
+        python tests/run_unicode_tests.py --verbose
+    
+    - name: Generate coverage report
+      run: |
+        python -m pytest tests/test_unicode*.py tests/test_*unicode*.py \
+          --cov=src.utils.unicode_utils \
+          --cov-report=html \
+          --cov-report=xml \
+          --cov-report=term-missing \
+          --tb=short
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unicode-utils
+        name: unicode-utils-coverage
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov/
+        retention-days: 30
+    
+    - name: Upload comprehensive test logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: comprehensive-test-logs
+        path: tests/logs/
+        retention-days: 30
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test-cross-platform, test-performance, test-encoding-scenarios, test-docker, comprehensive-test]
+    if: always()
+    
+    steps:
+    - name: Check test results
+      run: |
+        echo "Cross-platform tests: ${{ needs.test-cross-platform.result }}"
+        echo "Performance tests: ${{ needs.test-performance.result }}"
+        echo "Encoding scenario tests: ${{ needs.test-encoding-scenarios.result }}"
+        echo "Docker tests: ${{ needs.test-docker.result }}"
+        echo "Comprehensive tests: ${{ needs.comprehensive-test.result }}"
+        
+        if [[ "${{ needs.test-cross-platform.result }}" == "success" && \
+              "${{ needs.test-performance.result }}" == "success" && \
+              "${{ needs.comprehensive-test.result }}" == "success" ]]; then
+          echo "✅ All critical tests passed!"
+          exit 0
+        else
+          echo "❌ Some critical tests failed!"
+          exit 1
+        fi

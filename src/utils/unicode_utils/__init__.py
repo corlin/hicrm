@@ -95,23 +95,70 @@ def safe_print(*args, **kwargs) -> None:
     Unicode-safe print function with automatic fallback.
     
     This is a convenience function that uses the global SafeOutput instance.
-    All arguments are passed through to SafeOutput.safe_print().
+    It automatically handles Unicode characters that might cause encoding
+    errors on systems with limited console support (like Windows GBK).
+    
+    All arguments are passed through to SafeOutput.safe_print(), which
+    means it supports all the same parameters as the built-in print()
+    function, including sep, end, file, and flush.
     
     Args:
-        *args: Values to print
-        **kwargs: Keyword arguments for print function
+        *args: Values to print (any objects that can be converted to strings)
+        **kwargs: Keyword arguments for print function:
+            - sep: String inserted between values (default: ' ')
+            - end: String appended after the last value (default: '\n')
+            - file: File object to write to (default: sys.stdout)
+            - flush: Whether to forcibly flush the stream (default: False)
+    
+    Example:
+        >>> safe_print("Status:", "✅", "Success")
+        Status: ✅ Success
+        
+        >>> safe_print("Progress:", "█" * 5, "░" * 5)
+        Progress: █████░░░░░
+        
+        >>> safe_print("Error:", "❌", "Failed", file=sys.stderr)
+        Error: ❌ Failed
+    
+    Note:
+        On systems that don't support Unicode, characters like ✅ will
+        automatically be replaced with ASCII alternatives like [OK].
     """
     _get_global_output().safe_print(*args, **kwargs)
 
 
 def print_status(status: str, message: str, **kwargs) -> None:
     """
-    Print a formatted status message.
+    Print a formatted status message with appropriate symbol.
+    
+    This function automatically selects an appropriate symbol based on the
+    status type and formats it consistently. On Unicode-capable systems,
+    it uses emoji symbols; on limited systems, it uses ASCII alternatives.
     
     Args:
-        status: Status type ('success', 'error', 'warning', 'info', 'processing')
-        message: The status message text
-        **kwargs: Additional arguments passed to safe_print()
+        status: Status type. Supported values:
+            - 'success', 'ok', 'pass' → ✅ (or [OK])
+            - 'error', 'fail', 'failed' → ❌ (or [ERROR])
+            - 'warning', 'warn' → ⚠️ (or [WARNING])
+            - 'info' → ℹ️ (or [INFO])
+            - 'processing', 'loading' → ⏳ (or [PROCESSING])
+        message: The status message text to display
+        **kwargs: Additional arguments passed to safe_print() such as
+            file, flush, etc.
+    
+    Example:
+        >>> print_status("success", "File uploaded successfully")
+        ✅ File uploaded successfully
+        
+        >>> print_status("error", "Connection timeout")
+        ❌ Connection timeout
+        
+        >>> print_status("warning", "Disk space low")
+        ⚠️ Disk space low
+    
+    Note:
+        The status parameter is case-insensitive. Unknown status types
+        will use a generic bullet point symbol (• or *).
     """
     output = _get_global_output()
     formatted_message = output.format_status(status, message)
@@ -120,13 +167,39 @@ def print_status(status: str, message: str, **kwargs) -> None:
 
 def print_progress(current: int, total: int, prefix: str = "", **kwargs) -> None:
     """
-    Print a formatted progress indicator.
+    Print a formatted progress indicator with visual progress bar.
+    
+    Creates a progress bar using Unicode block characters on supported
+    systems, or ASCII characters (#, -) on limited systems. The progress
+    bar shows both visual progress and percentage completion.
     
     Args:
-        current: Current progress value
-        total: Total/maximum progress value
-        prefix: Text to show before the progress bar
-        **kwargs: Additional arguments passed to safe_print()
+        current: Current progress value (should be <= total)
+        total: Total/maximum progress value (should be > 0)
+        prefix: Text to show before the progress bar (default: "")
+        **kwargs: Additional arguments passed to safe_print(), such as:
+            - end: Use '\r' for updating progress in place
+            - file: Redirect to different output stream
+            - flush: Force immediate output (useful with end='\r')
+    
+    Example:
+        >>> print_progress(50, 100, "Processing: ")
+        Processing: [██████████░░░░░░░░░░] 50.0%
+        
+        >>> # Update progress in place
+        >>> for i in range(101):
+        ...     print_progress(i, 100, "Loading: ", end='\r', flush=True)
+        Loading: [████████████████████] 100.0%
+        
+        >>> # With custom prefix
+        >>> print_progress(75, 100, "Download: ")
+        Download: [███████████████░░░░░] 75.0%
+    
+    Note:
+        - On Unicode systems: Uses █ for filled and ░ for empty portions
+        - On ASCII systems: Uses # for filled and - for empty portions
+        - Progress bar length is fixed at 20 characters
+        - Percentage is displayed with one decimal place
     """
     output = _get_global_output()
     progress_str = output.format_progress(current, total, prefix)

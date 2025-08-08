@@ -3,6 +3,31 @@ Console encoding detection and setup utilities.
 
 This module provides platform-specific console encoding detection and setup
 functionality to handle Unicode characters properly across different systems.
+
+The ConsoleHandler class provides static methods for:
+- Detecting current console encoding across platforms
+- Setting up Unicode console support when possible
+- Testing Unicode output capabilities
+- Gathering diagnostic information
+
+Platform-Specific Behavior:
+    Windows:
+        - Detects GBK, UTF-8, CP1252, and other code pages
+        - Attempts to set console to UTF-8 (code page 65001)
+        - Uses codecs.getwriter() to reconfigure output streams
+        
+    macOS/Linux:
+        - Usually UTF-8 by default
+        - Checks LANG environment variable
+        - Sets PYTHONIOENCODING when needed
+
+Example:
+    >>> ConsoleHandler.detect_console_encoding()
+    'utf-8'
+    >>> ConsoleHandler.is_unicode_supported()
+    True
+    >>> ConsoleHandler.setup_unicode_console()
+    True
 """
 
 import sys
@@ -17,7 +42,20 @@ logger = logging.getLogger(__name__)
 
 
 class ConsoleHandler:
-    """Handles console encoding detection and setup for Unicode support."""
+    """
+    Handles console encoding detection and setup for Unicode support.
+    
+    This class provides static methods for managing console encoding across
+    different platforms. It automatically detects the current console encoding
+    and can attempt to configure Unicode support when possible.
+    
+    All methods are static and can be called without instantiating the class.
+    The class maintains no state and is designed for utility functions only.
+    
+    Thread Safety:
+        All methods are thread-safe as they only read system properties
+        or modify global stdout/stderr streams atomically.
+    """
     
     @staticmethod
     def detect_console_encoding() -> str:

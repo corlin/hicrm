@@ -116,7 +116,8 @@ class VectorExamplesRunner:
     def display_sub_menu(self, category_key: str):
         """显示子菜单"""
         category = self.examples[category_key]
-        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'{category[\"name\"]} - 子示例', '📋')}")
+        category_name = category["name"]
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'{category_name} - 子示例', '📋')}")
         print("="*60)
         
         for key, description in category['sub_examples'].items():
@@ -178,9 +179,11 @@ class VectorExamplesRunner:
             
             try:
                 await self.run_example(example['module'])
-                self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'{example[\"name\"]} 完成')}")
+                example_name = example["name"]
+                self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'{example_name} 完成')}")
             except Exception as e:
-                self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'{example[\"name\"]} 失败: {e}')}")
+                example_name = example["name"]
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'{example_name} 失败: {e}')}")
                 logger.error(f"示例 {example['name']} 运行失败: {e}")
                 
                 # 询问是否继续
@@ -258,7 +261,8 @@ class VectorExamplesRunner:
             return
         
         category = self.examples[category_key]
-        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'运行类别: {category[\"name\"]}', '🚀')}")
+        category_name = category["name"]
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', f'运行类别: {category_name}', '🚀')}")
         self.safe_output.safe_print("="*60)
         
         await self.run_example(category['module'])
@@ -270,10 +274,12 @@ class VectorExamplesRunner:
         # 检查Python版本
         python_version = sys.version_info
         if python_version < (3, 11):
-            self.safe_output.safe_print(f"{self.safe_output.format_status('warning', f'Python版本过低: {python_version.major}.{python_version.minor}')}")
+            python_version_str = f"{python_version.major}.{python_version.minor}"
+            self.safe_output.safe_print(f"{self.safe_output.format_status('warning', f'Python版本过低: {python_version_str}')}")
             print("   建议使用Python 3.11+")
         else:
-            self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'Python版本: {python_version.major}.{python_version.minor}')}")
+            python_version_str = f"{python_version.major}.{python_version.minor}"
+            self.safe_output.safe_print(f"{self.safe_output.format_status('success', f'Python版本: {python_version_str}')}")
         
         # 检查必要的模块
         required_modules = [
@@ -290,7 +296,8 @@ class VectorExamplesRunner:
                 self.safe_output.safe_print(f"{self.safe_output.format_status('error', f'{module} 模块缺失')}")
         
         if missing_modules:
-            self.safe_output.safe_print(f"\n{self.safe_output.format_status('warning', f'缺失模块: {missing_modules}')}")
+            missing_modules_str = ', '.join(missing_modules)
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('warning', f'缺失模块: {missing_modules_str}')}")
             print("请运行: uv sync")
         
         # 检查服务连接 (简单检查)

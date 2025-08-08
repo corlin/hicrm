@@ -4,6 +4,25 @@ Safe output utility for Unicode-aware printing with automatic fallback.
 This module provides the SafeOutput class that handles Unicode characters
 gracefully across different console encodings, with automatic fallback to
 ASCII alternatives when Unicode is not supported.
+
+The SafeOutput class is the main interface for Unicode-safe output operations.
+It automatically detects console capabilities and provides methods for:
+- Safe printing with Unicode fallback
+- Formatted status messages with appropriate symbols
+- Progress bars with cross-platform compatibility
+- Section headers with consistent styling
+
+Error Handling:
+    - Catches UnicodeEncodeError and falls back to ASCII
+    - Handles platform-specific encoding issues gracefully
+    - Provides ultimate fallback for critical output failures
+    - Logs encoding issues for debugging
+
+Example:
+    >>> output = SafeOutput()
+    >>> output.safe_print("Status: ✅ Success")  # Works on all platforms
+    >>> status = output.format_status("success", "Operation completed")
+    >>> progress = output.format_progress(75, 100, "Progress: ")
 """
 
 import sys
@@ -29,9 +48,23 @@ class SafeOutput:
         Initialize the SafeOutput utility.
         
         Args:
-            enable_unicode: Force enable/disable Unicode. If None, auto-detect.
+            enable_unicode: Force enable/disable Unicode. If None, auto-detect
+                based on console capabilities. True forces Unicode mode,
+                False forces ASCII mode.
             auto_setup: Whether to automatically setup Unicode console support
-            output_stream: Custom output stream (defaults to sys.stdout)
+                by calling ConsoleHandler.setup_unicode_console(). Recommended
+                for most use cases.
+            output_stream: Custom output stream (defaults to sys.stdout).
+                Useful for redirecting output to files or custom streams.
+        
+        Raises:
+            No exceptions are raised during initialization. Setup failures
+            are logged but do not prevent object creation.
+        
+        Note:
+            The Unicode support detection is performed during initialization
+            and cached for performance. If console settings change after
+            initialization, create a new SafeOutput instance.
         """
         self._output_stream = output_stream or sys.stdout
         self._character_map = CharacterMap()

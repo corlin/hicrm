@@ -23,11 +23,8 @@ import warnings
 from typing import List, Dict, Any, Tuple
 from datetime import datetime
 
-# 设置控制台编码为UTF-8（Windows兼容性）
-if sys.platform.startswith('win'):
-    import codecs
-    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
-    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+# Import Unicode utilities for safe output
+from src.utils.unicode_utils import SafeOutput
 
 # 抑制pkg_resources弃用警告
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated")
@@ -54,6 +51,7 @@ class RAGServiceExamples:
         self.rag_service = None
         self.sample_documents = self._prepare_sample_documents()
         self.sample_questions = self._prepare_sample_questions()
+        self.safe_output = SafeOutput()
         
     def _prepare_sample_documents(self) -> List[Dict[str, Any]]:
         """准备示例文档"""
@@ -222,7 +220,7 @@ class RAGServiceExamples:
             logger.error(f"服务初始化失败: {e}")
             # 创建默认服务用于演示
             self.rag_service = RAGService()
-            print("⚠️ 使用默认配置创建RAG服务")
+            self.safe_output.safe_print(f"{self.safe_output.format_status('warning', '使用默认配置创建RAG服务')}")
     
     async def example_02_chinese_text_processing(self):
         """示例2: 中文文本处理和分块"""
@@ -293,7 +291,7 @@ class RAGServiceExamples:
                 print(f"  内容预览: {doc['content'].strip()[:100]}...")
             
             # 模拟添加文档到RAG系统
-            print(f"\n🔄 正在添加文档到RAG系统...")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('processing', '正在添加文档到RAG系统...', '🔄')}")
             
             # 实际使用时的代码：
             # success = await self.rag_service.add_documents(
@@ -305,7 +303,7 @@ class RAGServiceExamples:
             success = True
             
             if success:
-                print("✅ 文档添加成功")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('success', '文档添加成功')}")
                 
                 # 显示文档处理统计
                 total_chars = sum(len(doc['content']) for doc in self.sample_documents)
@@ -326,7 +324,7 @@ class RAGServiceExamples:
                 print(f"  平均每文档块数: {estimated_chunks/len(self.sample_documents):.1f}")
                 
             else:
-                print("❌ 文档添加失败")
+                self.safe_output.safe_print(f"{self.safe_output.format_status('error', '文档添加失败')}")
                 
         except Exception as e:
             logger.error(f"文档管理失败: {e}")

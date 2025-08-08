@@ -16,6 +16,7 @@ from src.models.knowledge import (
     UsageStatistics, KnowledgeChunk, KnowledgeRelation
 )
 from src.services.knowledge_service import DocumentParser, QualityAssessment
+from src.utils.unicode_utils import SafeOutput
 
 
 class SimpleKnowledgeDemo:
@@ -25,6 +26,7 @@ class SimpleKnowledgeDemo:
         self.parser = DocumentParser()
         self.quality_assessor = QualityAssessment()
         self.knowledge_store: Dict[str, Knowledge] = {}
+        self.safe_output = SafeOutput()
         
     def run_demo(self):
         """运行演示"""
@@ -211,7 +213,7 @@ class SimpleKnowledgeDemo:
         for knowledge in knowledge_list:
             if knowledge.quality:
                 quality = knowledge.quality
-                print(f"\n📋 {knowledge.title}")
+                self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', knowledge.title, '📋')}")
                 print(f"  综合评分: {quality.overall_score:.2f}")
                 print(f"  准确性: {quality.accuracy_score:.2f}")
                 print(f"  完整性: {quality.completeness_score:.2f}")
@@ -227,7 +229,7 @@ class SimpleKnowledgeDemo:
     
     def demo_search_filtering(self, knowledge_list: List[Knowledge]):
         """搜索过滤演示"""
-        print("\n🎯 4. 搜索过滤演示 (Search Filtering Demo)")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '4. 搜索过滤演示 (Search Filtering Demo)', '🎯')}")
         print("-" * 40)
         
         # 按类型过滤
@@ -298,7 +300,7 @@ class SimpleKnowledgeDemo:
     
     def demo_usage_statistics(self, knowledge_list: List[Knowledge]):
         """使用统计演示"""
-        print("\n📊 5. 使用统计演示 (Usage Statistics Demo)")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '5. 使用统计演示 (Usage Statistics Demo)', '📊')}")
         print("-" * 40)
         
         # 模拟一些使用活动
@@ -316,7 +318,7 @@ class SimpleKnowledgeDemo:
         print("使用统计:")
         for knowledge in knowledge_list:
             usage = knowledge.usage
-            print(f"\n📋 {knowledge.title}")
+            self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', knowledge.title, '📋')}")
             print(f"  查看次数: {usage.view_count}")
             print(f"  搜索命中: {usage.search_count}")
             print(f"  被引用: {usage.reference_count}")
@@ -334,7 +336,7 @@ class SimpleKnowledgeDemo:
         total_searches = sum(k.usage.search_count for k in knowledge_list)
         total_references = sum(k.usage.reference_count for k in knowledge_list)
         
-        print(f"\n📈 整体统计:")
+        self.safe_output.safe_print(f"\n{self.safe_output.format_status('info', '整体统计:', '📈')}")
         print(f"  总知识数: {len(knowledge_list)}")
         print(f"  总查看次数: {total_views}")
         print(f"  总搜索次数: {total_searches}")
