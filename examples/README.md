@@ -1,278 +1,240 @@
-# HiCRM 系统示例程序
+# 多模态数据分析能力示例程序
 
-本目录包含了HiCRM对话式客户关系管理系统的各种示例程序和验证脚本，用于演示和验证系统的各项功能。
+本目录包含了对话式CRM系统多模态数据分析功能的完整示例程序，展示了如何使用语音识别、行为分析、高价值客户识别和数据融合等核心功能。
 
-## 📁 文件说明
+## 📁 示例文件说明
 
-### 对话状态管理示例
+### 🚀 快速开始
+- **`quick_start_multimodal.py`** - 最简单的多模态分析示例，适合快速了解基本功能
 
-### 核心示例程序
+### 🎯 完整演示
+- **`multimodal_analysis_demo.py`** - 完整的多模态数据分析演示，包含所有核心功能
 
-1. **`conversation_state_examples.py`** - 基础功能示例
-   - 演示对话状态管理系统的所有核心功能
-   - 包含6个详细的功能示例
-   - 适合了解系统基本用法
+### 🎤 专项功能演示
+- **`speech_analysis_example.py`** - 语音识别和分析专项演示
+- **`behavior_analysis_example.py`** - 客户行为分析专项演示
 
-2. **`sales_conversation_demo.py`** - 销售对话演示
-   - 完整的销售对话场景演示
-   - 展示多Agent协作和复杂业务流程
-   - 包含5个销售阶段的完整流程
+## 🏃‍♂️ 运行方式
 
-3. **`simple_conversation_demo.py`** - 简化验证程序
-   - 专门用于功能验证的简化版本
-   - 避免外部依赖问题
-   - 快速验证核心功能
-
-4. **`validation_report.py`** - 详细验证报告
-   - 全面的功能测试和验证
-   - 生成详细的测试报告
-   - 包含性能和架构质量评估
-
-5. **`run_examples.py`** - 示例程序运行器
-   - 统一运行所有示例程序
-   - 提供交互式体验
-
-### RAG服务示例
-
-6. **`rag_service_examples.py`** - RAG服务完整示例
-   - 展示检索增强生成(RAG)服务的所有功能
-   - 包含10个详细的功能演示
-   - 涵盖中文文本处理、多种检索模式、重排序等
-
-7. **`rag_simple_demo.py`** - RAG服务简化演示
-   - 专门用于快速验证RAG功能
-   - 避免外部依赖问题
-   - 支持交互式问答演示
-
-### 向量数据库和嵌入服务示例
-
-8. **`vector_database_examples.py`** - 向量数据库服务示例
-   - 展示Qdrant向量数据库的基本操作和高级功能
-   - 包含文档管理、向量搜索、相似度计算等功能
-   - 演示性能测试和优化技巧
-
-9. **`embedding_service_examples.py`** - BGE-M3嵌入服务示例
-   - 展示BGE-M3多语言嵌入模型的使用方法
-   - 包含文本编码、相似度计算、重排序等功能
-   - 演示缓存机制和多语言支持
-
-10. **`hybrid_search_examples.py`** - 混合搜索服务示例
-   - 展示如何结合向量搜索和BM25搜索实现混合检索
-   - 包含不同搜索模式、权重配置、过滤搜索等功能
-   - 演示性能对比和统计分析
-
-11. **`chinese_search_examples.py`** - 中文语义搜索示例
-   - 专门针对中文文本的语义搜索功能演示
-   - 包含中文预处理、同义词扩展、意图分析等功能
-   - 演示中文搜索优化和性能分析
-
-12. **`run_vector_examples.py`** - 向量示例运行器
-    - 统一运行所有向量数据库和嵌入服务示例
-    - 提供交互式选择和批量运行功能
-
-## 🚀 快速开始
-
-### 对话状态管理示例
-
-#### 运行简化验证程序
+### 环境准备
+确保已安装项目依赖：
 ```bash
-uv run python examples/simple_conversation_demo.py
+# 使用uv安装依赖
+uv sync
+
+# 或使用pip安装
+pip install -r requirements.txt
 ```
 
-#### 运行详细验证报告
+### 运行示例
+
+#### 1. 快速开始示例
 ```bash
-uv run python examples/validation_report.py
+# 最简单的入门示例
+python examples/quick_start_multimodal.py
 ```
 
-#### 运行所有对话示例程序
+#### 2. 完整功能演示
 ```bash
-uv run python examples/run_examples.py
+# 运行完整的多模态分析演示
+python examples/multimodal_analysis_demo.py
 ```
 
-### RAG服务示例
-
-#### 运行RAG服务示例
+#### 3. 语音分析专项演示
 ```bash
-# 运行完整RAG演示
-uv run python examples/rag_service_examples.py
-
-# 运行简化RAG演示
-uv run python examples/rag_simple_demo.py
-
-# 交互式问答演示
-uv run python examples/rag_simple_demo.py interactive
-
-# 性能测试
-uv run python examples/rag_simple_demo.py performance
-
-# 运行特定示例 (1-10)
-uv run python examples/rag_service_examples.py 7
+# 语音识别和分析功能演示
+python examples/speech_analysis_example.py
 ```
 
-### 向量数据库和嵌入服务示例
-
-#### 环境准备
+#### 4. 行为分析专项演示
 ```bash
-# 启动Qdrant向量数据库
-docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
-
-# 启动Elasticsearch
-docker run -p 9200:9200 -e "discovery.type=single-node" elasticsearch:8.11.0
+# 客户行为分析功能演示
+python examples/behavior_analysis_example.py
 ```
 
-#### 运行向量数据库示例
-```bash
-# 运行所有向量示例
-uv run python examples/run_vector_examples.py
+## 🎯 功能演示内容
 
-# 运行特定示例
-uv run python examples/vector_database_examples.py
-uv run python examples/embedding_service_examples.py
-uv run python examples/hybrid_search_examples.py
-uv run python examples/chinese_search_examples.py
+### 🎤 语音识别和文本转换
+- ✅ 单个音频文件处理
+- ✅ 批量音频文件处理
+- ✅ 多语言支持 (中文、英文、日文等)
+- ✅ 音频质量验证
+- ✅ 情感和意图识别
+- ✅ 错误处理机制
+
+### 📊 客户行为数据分析
+- ✅ 多维度行为指标分析
+- ✅ 客户行为画像生成
+- ✅ 访问模式识别
+- ✅ 转化路径分析
+- ✅ 异常行为检测
+- ✅ 时间窗口对比分析
+
+### 🏆 高价值客户识别
+- ✅ 多模态价值评分算法
+- ✅ 客户价值指标计算
+- ✅ 风险因素识别
+- ✅ 机会点发现
+- ✅ 智能推荐生成
+
+### 🔄 多模态数据融合
+- ✅ 跨模态数据整合
+- ✅ 特征融合算法
+- ✅ 置信度评估
+- ✅ 异常检测
+- ✅ 端到端分析管道
+
+### ⚡ 性能和扩展性
+- ✅ 批量处理能力
+- ✅ 并发分析支持
+- ✅ 性能基准测试
+- ✅ 错误恢复机制
+
+## 📋 示例输出说明
+
+### 语音分析输出示例
+```
+🎤 单个音频分析示例
+------------------------------
+📝 转录文本: 我们公司正在寻找一个CRM系统，能否介绍一下你们的解决方案？
+🎯 置信度: 92.00%
+😊 情感分析: positive
+🎭 情绪识别: interested
+🗣️  语速: 125.3 词/分钟
+⏸️  停顿频率: 0.12
+🔊 语音质量:
+     clarity: 0.88
+     volume: 0.75
+     pitch_stability: 0.82
+🔑 关键词: CRM, 系统, 解决方案, 介绍
+💡 意图识别: product_inquiry
 ```
 
-## 📊 验证结果
+### 行为分析输出示例
+```
+📊 基础客户行为分析示例
+----------------------------------------
+👤 客户ID: behavior_demo_001
+📅 数据时间跨度: 21天
+📊 会话数量: 15
 
-根据最新的验证报告：
+📈 参与度指标:
+   平均参与度评分: 0.78
+   总页面浏览量: 89
+   总点击次数: 45
+   平均会话时长: 245.3 秒
+   跳出率: 23.5%
 
-- **总测试数**: 8项核心功能测试
-- **通过率**: 100% ✅
-- **功能覆盖**: 完整覆盖所有核心功能
-- **架构质量**: 优秀
-- **性能表现**: 良好
+👤 客户行为画像:
+   客户类型: high_value
+   综合评分: 0.85
+   参与水平: high
+   数字化成熟度: advanced
+```
 
-## 🎯 功能演示
+### 高价值客户识别输出示例
+```
+🏆 高价值客户识别结果
+🎯 识别出 2 个高价值客户
 
-### 1. 基础功能示例 (`conversation_state_examples.py`)
+🏆 高价值客户 #1
+   客户ID: customer_001
+   综合评分: 0.89
+   预测价值: 0.92
+   🎯 主要推荐行动:
+      1. 立即分配顶级销售代表
+      2. 安排高管层面会议
+      3. 提供定制化解决方案演示
+```
 
-演示以下功能：
-- ✅ 基本对话流程
-- ✅ 记忆管理 (短期/长期)
-- ✅ 上下文管理
-- ✅ 多Agent对话场景
-- ✅ 用户偏好学习
-- ✅ 对话摘要和分析
+## 🔧 自定义和扩展
 
-### 2. 销售对话演示 (`sales_conversation_demo.py`)
+### 修改分析参数
+```python
+# 在代码中修改分析请求参数
+request = MultimodalAnalysisRequest(
+    customer_id="your_customer_id",
+    analysis_type="high_value_identification",  # 可选: behavior_pattern_analysis, sentiment_analysis
+    modalities=[
+        DataModalityType.TEXT,
+        DataModalityType.VOICE,
+        DataModalityType.BEHAVIOR
+    ],
+    time_range={
+        'start': datetime.now() - timedelta(days=30),  # 修改时间范围
+        'end': datetime.now()
+    },
+    parameters={'detailed_analysis': True}  # 添加自定义参数
+)
+```
 
-完整的销售流程演示：
-- 📞 阶段1: 问候和建立关系
-- 🔍 阶段2: 需求评估
-- 💡 阶段3: 解决方案展示
-- 🤔 阶段4: 异议处理
-- 🎯 阶段5: 成交和后续步骤
+### 添加自定义数据
+```python
+# 创建自定义行为数据
+custom_behavior = BehaviorData(
+    customer_id="custom_customer",
+    session_id="custom_session",
+    page_views=[
+        {"url": "/your-page", "timestamp": datetime.now(), "duration": 120}
+    ],
+    click_events=[
+        {"element": "your_button", "timestamp": datetime.now()}
+    ],
+    time_spent={"/your-page": 120.0},
+    interaction_patterns={"custom_metric": 0.8},
+    engagement_score=0.75,
+    conversion_indicators=["custom_conversion"],
+    timestamp=datetime.now()
+)
+```
 
-### 3. 验证测试 (`validation_report.py`)
+## 🐛 故障排除
 
-全面的功能验证：
-- 🧪 对话创建功能测试
-- 🧪 消息管理功能测试
-- 🧪 状态管理功能测试
-- 🧪 上下文管理功能测试
-- 🧪 记忆管理功能测试
-- 🧪 偏好学习功能测试
-- 🧪 对话摘要功能测试
-- 🧪 直接状态跟踪器测试
+### 常见问题
 
-## 🔧 技术特性验证
+1. **ImportError: No module named 'src'**
+   ```bash
+   # 确保从项目根目录运行
+   cd /path/to/hicrm
+   python examples/quick_start_multimodal.py
+   ```
 
-### 对话状态跟踪
-- ✅ 对话状态初始化
-- ✅ 状态更新和查询
-- ✅ 流程状态管理
-- ✅ 步骤历史记录
+2. **依赖缺失错误**
+   ```bash
+   # 重新安装依赖
+   uv sync
+   # 或
+   pip install numpy pydantic
+   ```
 
-### 记忆管理系统
-- ✅ 短期记忆 (带TTL过期)
-- ✅ 长期记忆 (带重要性评分)
-- ✅ 记忆提升机制
-- ✅ 访问统计更新
+3. **异步运行错误**
+   ```python
+   # 确保使用 asyncio.run()
+   if __name__ == "__main__":
+       asyncio.run(main())
+   ```
 
-### 上下文管理
-- ✅ 上下文变量管理
-- ✅ 内存限制控制
-- ✅ 自动清理机制
+### 调试模式
+在示例代码中添加调试信息：
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
 
-### 用户偏好学习
-- ✅ 通信风格学习
-- ✅ Agent偏好识别
-- ✅ 任务模式分析
-- ✅ 偏好应用策略
+## 📚 相关文档
 
-### 多Agent协作
-- ✅ Agent切换管理
-- ✅ 协作状态跟踪
-- ✅ 上下文传递
-- ✅ 历史记录维护
+- [多模态数据分析设计文档](../.kiro/specs/conversational-crm/design.md)
+- [API接口文档](../docs/api.md)
+- [测试文档](../tests/test_multimodal_analysis.py)
 
-## 📈 性能指标
+## 🤝 贡献
 
-根据验证结果：
-- **响应时间**: 所有异步操作正常执行
-- **内存使用**: 合理的内存限制和清理机制
-- **并发处理**: 支持多对话并发管理
-- **数据一致性**: 状态一致性维护良好
+欢迎提交改进建议和新的示例程序！请确保：
+1. 代码风格一致
+2. 添加适当的注释和文档
+3. 包含错误处理
+4. 提供清晰的输出说明
 
-## 🏗️ 架构质量
+## 📄 许可证
 
-- **模块化设计**: 服务层和数据层分离清晰
-- **接口设计**: 合理易用的API接口
-- **扩展性**: 良好的扩展性和维护性
-- **错误处理**: 有效的错误处理机制
-
-## 💡 使用建议
-
-### 开发者
-1. 先运行 `simple_conversation_demo.py` 了解基本功能
-2. 查看 `validation_report.py` 了解详细的功能测试
-3. 参考 `sales_conversation_demo.py` 学习实际应用场景
-
-### 测试人员
-1. 运行 `validation_report.py` 获取完整的测试报告
-2. 检查所有功能的测试覆盖情况
-3. 验证性能和可靠性指标
-
-### 产品经理
-1. 查看 `sales_conversation_demo.py` 了解业务场景应用
-2. 参考验证报告中的功能覆盖分析
-3. 了解系统的扩展性和改进建议
-
-## 🔮 未来改进
-
-基于验证报告的建议：
-1. 添加状态变更的事件通知机制
-2. 实现记忆数据的持久化存储
-3. 添加更多的用户偏好学习算法
-4. 优化大量数据场景下的性能
-5. 增加更详细的日志和监控功能
-
-## 📞 支持
-
-如果在运行示例程序时遇到问题，请检查：
-1. Python环境和依赖包是否正确安装
-2. 项目路径是否正确设置
-3. 模拟数据库连接是否正常
-
-## 📚 详细文档
-
-- **向量数据库示例详细说明**: [README_VECTOR_EXAMPLES.md](README_VECTOR_EXAMPLES.md)
-- **Qdrant连接测试说明**: [README_QDRANT_TESTS.md](README_QDRANT_TESTS.md)
-
-## 🎉 结论
-
-HiCRM系统的示例程序验证结果表明：
-
-### 对话状态管理系统
-- **功能完整性**: 100% ✅
-- **代码质量**: 优秀 ✅
-- **架构设计**: 合理 ✅
-- **可用性**: 良好 ✅
-
-### 向量数据库和嵌入服务
-- **BGE-M3嵌入模型**: 正常工作 ✅
-- **Qdrant向量数据库**: 连接正常 ✅
-- **混合搜索功能**: 运行良好 ✅
-- **中文语义搜索**: 优化完善 ✅
-
-系统已经准备好投入实际使用！
+本示例程序遵循项目的MIT许可证。

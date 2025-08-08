@@ -9,6 +9,11 @@ from .knowledge import (
     KnowledgeSearchFilter, KnowledgeSearchResult, KnowledgeUpdateRequest,
     KnowledgeRelation
 )
+from .multimodal import (
+    DataModalityType, VoiceAnalysisResult, BehaviorData, MultimodalDataPoint,
+    CustomerValueIndicator, HighValueCustomerProfile, DataFusionResult,
+    MultimodalAnalysisRequest, MultimodalAnalysisResult
+)
 
 __all__ = [
     "Customer",
@@ -35,5 +40,14 @@ __all__ = [
     "KnowledgeSearchFilter",
     "KnowledgeSearchResult",
     "KnowledgeUpdateRequest",
-    "KnowledgeRelation"
+    "KnowledgeRelation",
+    "DataModalityType",
+    "VoiceAnalysisResult",
+    "BehaviorData",
+    "MultimodalDataPoint",
+    "CustomerValueIndicator",
+    "HighValueCustomerProfile",
+    "DataFusionResult",
+    "MultimodalAnalysisRequest",
+    "MultimodalAnalysisResult"
 ]
