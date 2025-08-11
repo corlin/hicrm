@@ -8,6 +8,10 @@ from .base import BaseAgent, AgentState, AgentMessage, AgentResponse
 from .manager import AgentManager
 from .communication import MessageBroker, AgentCommunicator
 from .state_manager import AgentStateManager
+from .orchestrator import (
+    AgentOrchestrator, CollaborationTask, CollaborationMode, 
+    TaskPriority, TaskStatus, AgentRole, WorkflowState
+)
 
 __all__ = [
     "BaseAgent",
@@ -18,4 +22,11 @@ __all__ = [
     "MessageBroker",
     "AgentCommunicator", 
     "AgentStateManager",
+    "AgentOrchestrator",
+    "CollaborationTask",
+    "CollaborationMode",
+    "TaskPriority",
+    "TaskStatus",
+    "AgentRole",
+    "WorkflowState",
 ]

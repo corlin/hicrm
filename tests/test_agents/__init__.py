@@ -1,3 +1,1 @@
-"""
-Agent系统测试模块
-"""
+# Test agents module
