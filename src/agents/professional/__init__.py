@@ -6,8 +6,10 @@
 
 from .sales_agent import SalesAgent
 from .market_agent import MarketAgent
+from .product_agent import ProductAgent
 
 __all__ = [
     "SalesAgent",
     "MarketAgent",
+    "ProductAgent",
 ]
