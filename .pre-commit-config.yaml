@@ -1,23 +1,22 @@
-# Pre-commit hooks 配置
 repos:
-  # Python代码格式化
+  # Python 代码格式化
   - repo: https://github.com/psf/black
-    rev: 23.11.0
+    rev: 23.12.1
     hooks:
       - id: black
         language_version: python3.11
-        args: [--line-length=88]
+        args: [--line-length=100]
 
-  # Import排序
+  # Import 排序
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
-        args: [--profile=black, --line-length=88]
+        args: [--profile=black, --line-length=100]
 
   # 代码检查
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.1.9
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -25,7 +24,7 @@ repos:
 
   # 类型检查
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+    rev: v1.8.0
     hooks:
       - id: mypy
         additional_dependencies: [types-all]
@@ -38,11 +37,11 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-      - id: check-toml
       - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1000]
-      - id: check-merge-conflict
       - id: debug-statements
       - id: check-docstring-first
 
@@ -51,40 +50,59 @@ repos:
     rev: 1.7.5
     hooks:
       - id: bandit
-        args: [-r, src]
+        args: [-r, src/]
         exclude: tests/
 
-  # 文档检查
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        args: [--convention=google]
-        exclude: tests/
-
-  # Dockerfile检查
+  # Dockerfile 检查
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
     hooks:
       - id: hadolint-docker
         args: [--ignore, DL3008, --ignore, DL3009]
 
-  # YAML格式化
+  # YAML 格式化
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
         types: [yaml]
 
-  # Shell脚本检查
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
+  # 提交消息检查
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.13.0
     hooks:
-      - id: shellcheck
+      - id: commitizen
+        stages: [commit-msg]
 
-# 配置选项
-default_language_version:
-  python: python3.11
+  # 依赖安全检查
+  - repo: local
+    hooks:
+      - id: safety
+        name: safety
+        entry: uv run safety check
+        language: system
+        pass_filenames: false
+
+  # 自定义 uv 检查
+  - repo: local
+    hooks:
+      - id: uv-lock-check
+        name: uv lock check
+        entry: uv lock --check
+        language: system
+        pass_filenames: false
+        files: ^(pyproject\.toml|uv\.lock)$
+
+      - id: uv-sync-check
+        name: uv sync check
+        entry: bash -c 'uv sync --dry-run'
+        language: system
+        pass_filenames: false
+        files: ^(pyproject\.toml|uv\.lock)$
+
+# 全局配置
+default_stages: [commit]
+fail_fast: false
 
 ci:
   autofix_commit_msg: |
@@ -95,5 +113,5 @@ ci:
   autoupdate_branch: ''
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
   autoupdate_schedule: weekly
-  skip: []
+  skip: [safety, uv-lock-check, uv-sync-check]
   submodules: false

@@ -1,112 +1,165 @@
-# 开发环境 Docker Compose 配置
 version: '3.8'
 
 services:
-  # 开发环境应用服务
+  # 主应用服务
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: hicrm-app-dev
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/hicrm_dev
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/crm_db
       - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       - QDRANT_URL=http://qdrant:6333
+      - ENVIRONMENT=development
       - DEBUG=true
-      - LOG_LEVEL=DEBUG
-      - RELOAD=true
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     volumes:
       - .:/app
       - /app/.venv  # 排除虚拟环境
-      - ./logs:/app/logs
-      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - qdrant
+    command: uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
     networks:
-      - hicrm-dev-network
-    restart: unless-stopped
-    command: ["uv", "run", "uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+      - crm-network
 
-  # PostgreSQL数据库 (开发环境)
+  # PostgreSQL 数据库
   postgres:
     image: postgres:15-alpine
-    container_name: hicrm-postgres-dev
     environment:
-      - POSTGRES_DB=hicrm_dev
+      - POSTGRES_DB=crm_db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
     ports:
-      - "5433:5432"  # 使用不同端口避免冲突
+      - "5432:5432"
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-      - ./scripts/init-dev.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
-      - hicrm-dev-network
-    restart: unless-stopped
+      - crm-network
 
-  # Redis缓存 (开发环境)
+  # Redis 缓存
   redis:
     image: redis:7-alpine
-    container_name: hicrm-redis-dev
     ports:
-      - "6380:6379"  # 使用不同端口避免冲突
+      - "6379:6379"
     volumes:
-      - redis_dev_data:/data
+      - redis_data:/data
     command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
     networks:
-      - hicrm-dev-network
-    restart: unless-stopped
+      - crm-network
 
-  # Qdrant向量数据库 (开发环境)
+  # RabbitMQ 消息队列
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # 管理界面
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - crm-network
+
+  # Qdrant 向量数据库
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: hicrm-qdrant-dev
     ports:
-      - "6334:6333"  # 使用不同端口避免冲突
+      - "6333:6333"
+      - "6334:6334"
     volumes:
-      - qdrant_dev_data:/qdrant/storage
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
     networks:
-      - hicrm-dev-network
-    restart: unless-stopped
+      - crm-network
 
-  # 开发工具容器
-  dev-tools:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev-tools
-    container_name: hicrm-dev-tools
+  # Elasticsearch (用于混合检索)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
     volumes:
-      - .:/workspace
-    working_dir: /workspace
+      - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - hicrm-dev-network
-    profiles:
-      - tools
-    command: tail -f /dev/null  # 保持容器运行
+      - crm-network
+
+  # Kibana (Elasticsearch 管理界面)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - crm-network
+
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - crm-network
+
+  # Grafana 可视化
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - crm-network
+
+  # Jaeger 分布式追踪
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - crm-network
 
 volumes:
-  postgres_dev_data:
-    driver: local
-  redis_dev_data:
-    driver: local
-  qdrant_dev_data:
-    driver: local
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  qdrant_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
-  hicrm-dev-network:
+  crm-network:
     driver: bridge

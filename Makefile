@@ -1,244 +1,198 @@
-# HiCRM 项目 Makefile
-# 使用 UV 进行包管理
+# Conversational CRM Makefile
+# 使用 uv 进行 Python 项目管理
 
-.PHONY: help install install-dev install-prod test test-unit test-integration test-performance
-.PHONY: lint format type-check pre-commit clean build run dev docs docker-build docker-run
-.PHONY: db-upgrade db-downgrade db-reset seed-data backup-db
+.PHONY: help install dev-install test lint format clean run docker-build docker-run
 
 # 默认目标
-.DEFAULT_GOAL := help
-
-# 颜色定义
-BLUE := \033[36m
-GREEN := \033[32m
-YELLOW := \033[33m
-RED := \033[31m
-RESET := \033[0m
-
-help: ## 显示帮助信息
-	@echo "$(BLUE)HiCRM 项目管理命令$(RESET)"
+help:
+	@echo "Conversational CRM - 智能对话式CRM系统"
 	@echo ""
-	@echo "$(GREEN)环境管理:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(install|clean|setup)" | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-20s$(RESET) %s\n", $$1, $$2}'
-	@echo ""
-	@echo "$(GREEN)开发工具:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(test|lint|format|type|run|dev)" | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-20s$(RESET) %s\n", $$1, $$2}'
-	@echo ""
-	@echo "$(GREEN)数据库:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(db-|seed|backup)" | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-20s$(RESET) %s\n", $$1, $$2}'
-	@echo ""
-	@echo "$(GREEN)部署:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(build|docker|docs)" | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-20s$(RESET) %s\n", $$1, $$2}'
+	@echo "可用命令:"
+	@echo "  install      - 安装生产依赖"
+	@echo "  dev-install  - 安装开发依赖"
+	@echo "  test         - 运行测试"
+	@echo "  test-cov     - 运行测试并生成覆盖率报告"
+	@echo "  lint         - 运行代码检查"
+	@echo "  format       - 格式化代码"
+	@echo "  type-check   - 运行类型检查"
+	@echo "  clean        - 清理缓存和临时文件"
+	@echo "  run          - 启动开发服务器"
+	@echo "  run-prod     - 启动生产服务器"
+	@echo "  docker-build - 构建Docker镜像"
+	@echo "  docker-run   - 运行Docker容器"
+	@echo "  migrate      - 运行数据库迁移"
+	@echo "  seed         - 初始化种子数据"
 
-# 环境管理
-install: ## 安装生产依赖
-	@echo "$(GREEN)安装生产依赖...$(RESET)"
-	uv sync --no-dev
+# Python 和 uv 检查
+check-uv:
+	@which uv > /dev/null || (echo "请先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh" && exit 1)
 
-install-dev: ## 安装开发依赖
-	@echo "$(GREEN)安装开发依赖...$(RESET)"
-	uv sync --all-extras
+# 安装依赖
+install: check-uv
+	uv sync --frozen
 
-install-prod: ## 安装生产环境依赖
-	@echo "$(GREEN)安装生产环境依赖...$(RESET)"
-	uv sync --extra prod --no-dev
+# 安装开发依赖
+dev-install: check-uv
+	uv sync --all-extras --dev
 
-setup-dev: ## 设置开发环境
-	@echo "$(GREEN)设置开发环境...$(RESET)"
-	@if [ "$(OS)" = "Windows_NT" ]; then \
-		scripts/setup-dev.bat; \
-	else \
-		chmod +x scripts/setup-dev.sh && scripts/setup-dev.sh; \
-	fi
+# 运行测试
+test: check-uv
+	uv run pytest tests/ -v
 
-clean: ## 清理缓存和临时文件
-	@echo "$(YELLOW)清理缓存和临时文件...$(RESET)"
-	rm -rf .pytest_cache
-	rm -rf .mypy_cache
-	rm -rf .coverage
-	rm -rf htmlcov
-	rm -rf dist
-	rm -rf build
-	rm -rf *.egg-info
-	rm -rf .uv-cache
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
+# 运行测试并生成覆盖率报告
+test-cov: check-uv
+	uv run pytest tests/ --cov=src --cov-report=html --cov-report=term-missing -v
 
-# 测试
-test: ## 运行所有测试
-	@echo "$(GREEN)运行所有测试...$(RESET)"
-	uv run pytest -v
+# 运行集成测试
+test-integration: check-uv
+	uv run pytest tests/ -m integration -v
 
-test-unit: ## 运行单元测试
-	@echo "$(GREEN)运行单元测试...$(RESET)"
-	uv run pytest tests/test_models tests/test_services tests/test_core -v -m "not integration and not performance"
+# 运行单元测试
+test-unit: check-uv
+	uv run pytest tests/ -m "not integration" -v
 
-test-integration: ## 运行集成测试
-	@echo "$(GREEN)运行集成测试...$(RESET)"
-	uv run pytest tests/test_integration -v -m integration
-
-test-performance: ## 运行性能测试
-	@echo "$(GREEN)运行性能测试...$(RESET)"
-	uv run pytest tests/test_performance -v -m performance -s
-
-test-ai: ## 运行AI相关测试
-	@echo "$(GREEN)运行AI相关测试...$(RESET)"
-	uv run pytest -v -m ai
-
-test-coverage: ## 运行测试并生成覆盖率报告
-	@echo "$(GREEN)运行测试并生成覆盖率报告...$(RESET)"
-	uv run pytest --cov=src --cov-report=html --cov-report=term-missing
-
-test-watch: ## 监控文件变化并自动运行测试
-	@echo "$(GREEN)监控测试...$(RESET)"
-	uv run pytest-watch
-
-# 代码质量
-lint: ## 运行代码检查
-	@echo "$(GREEN)运行代码检查...$(RESET)"
-	uv run ruff check src tests
+# 代码检查
+lint: check-uv
 	uv run flake8 src tests
+	uv run ruff check src tests
 
-format: ## 格式化代码
-	@echo "$(GREEN)格式化代码...$(RESET)"
+# 格式化代码
+format: check-uv
 	uv run black src tests
 	uv run isort src tests
 	uv run ruff format src tests
 
-type-check: ## 类型检查
-	@echo "$(GREEN)运行类型检查...$(RESET)"
+# 类型检查
+type-check: check-uv
 	uv run mypy src
 
-pre-commit: ## 运行pre-commit检查
-	@echo "$(GREEN)运行pre-commit检查...$(RESET)"
-	uv run pre-commit run --all-files
+# 代码质量检查（全套）
+quality: format lint type-check test
 
-check-all: lint type-check test ## 运行所有检查
+# 清理缓存和临时文件
+clean:
+	rm -rf .pytest_cache/
+	rm -rf .coverage
+	rm -rf htmlcov/
+	rm -rf .mypy_cache/
+	rm -rf .ruff_cache/
+	rm -rf dist/
+	rm -rf build/
+	rm -rf *.egg-info/
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
 
-# 运行服务
-run: ## 运行生产服务器
-	@echo "$(GREEN)启动生产服务器...$(RESET)"
-	uv run gunicorn src.main:app -w 4 -k uvicorn.workers.UvicornWorker
-
-dev: ## 运行开发服务器
-	@echo "$(GREEN)启动开发服务器...$(RESET)"
+# 启动开发服务器
+run: check-uv
 	uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
-dev-debug: ## 运行调试模式开发服务器
-	@echo "$(GREEN)启动调试模式开发服务器...$(RESET)"
-	uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000 --log-level debug
+# 启动生产服务器
+run-prod: check-uv
+	uv run gunicorn src.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 
-# 数据库管理
-db-upgrade: ## 升级数据库到最新版本
-	@echo "$(GREEN)升级数据库...$(RESET)"
+# 数据库迁移
+migrate: check-uv
 	uv run alembic upgrade head
 
-db-downgrade: ## 降级数据库一个版本
-	@echo "$(YELLOW)降级数据库...$(RESET)"
-	uv run alembic downgrade -1
-
-db-reset: ## 重置数据库
-	@echo "$(RED)重置数据库...$(RESET)"
-	uv run alembic downgrade base
-	uv run alembic upgrade head
-
-db-revision: ## 创建新的数据库迁移
-	@echo "$(GREEN)创建数据库迁移...$(RESET)"
+# 创建新的迁移
+migrate-create: check-uv
 	@read -p "迁移描述: " desc; \
 	uv run alembic revision --autogenerate -m "$$desc"
 
-seed-data: ## 填充测试数据
-	@echo "$(GREEN)填充测试数据...$(RESET)"
-	uv run python scripts/seed_data.py
+# 初始化数据库
+init-db: check-uv
+	uv run python -m src.scripts.init_db
 
-backup-db: ## 备份数据库
-	@echo "$(GREEN)备份数据库...$(RESET)"
-	@mkdir -p backups
-	@timestamp=$$(date +%Y%m%d_%H%M%S); \
-	uv run python scripts/backup_db.py backups/backup_$$timestamp.sql
+# 初始化种子数据
+seed: check-uv
+	uv run python -m src.scripts.seed_data
 
-# 构建和部署
-build: ## 构建项目
-	@echo "$(GREEN)构建项目...$(RESET)"
-	uv build
+# 启动所有服务（开发环境）
+dev-services:
+	docker-compose -f docker-compose.dev.yml up -d
 
-docker-build: ## 构建Docker镜像
-	@echo "$(GREEN)构建Docker镜像...$(RESET)"
-	docker build -t hicrm:latest .
+# 停止所有服务
+stop-services:
+	docker-compose -f docker-compose.dev.yml down
 
-docker-run: ## 运行Docker容器
-	@echo "$(GREEN)运行Docker容器...$(RESET)"
-	docker-compose up -d
+# 构建Docker镜像
+docker-build:
+	docker build -t conversational-crm:latest .
 
-docker-dev: ## 运行开发环境Docker
-	@echo "$(GREEN)运行开发环境Docker...$(RESET)"
-	docker-compose -f docker-compose.dev.yml up
+# 运行Docker容器
+docker-run:
+	docker run -p 8000:8000 --env-file .env conversational-crm:latest
 
-docker-stop: ## 停止Docker容器
-	@echo "$(YELLOW)停止Docker容器...$(RESET)"
-	docker-compose down
-
-docker-logs: ## 查看Docker日志
-	@echo "$(GREEN)查看Docker日志...$(RESET)"
-	docker-compose logs -f
-
-# 文档
-docs: ## 构建文档
-	@echo "$(GREEN)构建文档...$(RESET)"
+# 生成API文档
+docs: check-uv
 	uv run mkdocs build
 
-docs-serve: ## 启动文档服务器
-	@echo "$(GREEN)启动文档服务器...$(RESET)"
+# 启动文档服务器
+docs-serve: check-uv
 	uv run mkdocs serve
 
-docs-deploy: ## 部署文档
-	@echo "$(GREEN)部署文档...$(RESET)"
-	uv run mkdocs gh-deploy
+# 安装pre-commit钩子
+pre-commit-install: check-uv
+	uv run pre-commit install
+
+# 运行pre-commit检查
+pre-commit: check-uv
+	uv run pre-commit run --all-files
+
+# 更新依赖
+update: check-uv
+	uv sync --upgrade
+
+# 锁定依赖版本
+lock: check-uv
+	uv lock
+
+# 导出requirements.txt（用于Docker等）
+export-requirements: check-uv
+	uv export --format requirements-txt --output-file requirements.txt
+	uv export --format requirements-txt --all-extras --dev --output-file requirements-dev.txt
 
 # 安全检查
-security-check: ## 运行安全检查
-	@echo "$(GREEN)运行安全检查...$(RESET)"
+security: check-uv
 	uv run safety check
-	uv run bandit -r src
+	uv run bandit -r src/
 
-# 依赖管理
-deps-update: ## 更新依赖
-	@echo "$(GREEN)更新依赖...$(RESET)"
-	uv lock --upgrade
+# 性能测试
+perf-test: check-uv
+	uv run locust -f tests/performance/locustfile.py --host=http://localhost:8000
 
-deps-audit: ## 审计依赖安全性
-	@echo "$(GREEN)审计依赖安全性...$(RESET)"
-	uv run pip-audit
+# 完整的CI检查
+ci: dev-install quality test-cov security
 
-deps-tree: ## 显示依赖树
-	@echo "$(GREEN)显示依赖树...$(RESET)"
-	uv tree
+# 项目初始化（首次设置）
+init: check-uv dev-install pre-commit-install init-db seed
+	@echo "项目初始化完成！"
+	@echo "运行 'make run' 启动开发服务器"
 
-# 性能分析
-profile: ## 性能分析
-	@echo "$(GREEN)运行性能分析...$(RESET)"
-	uv run python -m cProfile -o profile.stats src/main.py
+# 生产部署准备
+deploy-prep: clean quality test export-requirements docker-build
+	@echo "生产部署准备完成！"
 
-benchmark: ## 运行基准测试
-	@echo "$(GREEN)运行基准测试...$(RESET)"
-	uv run pytest tests/test_performance/test_load_testing.py -v --benchmark-only
+# 显示项目信息
+info:
+	@echo "项目: Conversational CRM"
+	@echo "Python版本: $(shell python --version)"
+	@echo "UV版本: $(shell uv --version)"
+	@echo "虚拟环境: $(shell uv venv list)"
+	@echo "依赖数量: $(shell uv pip list | wc -l)"
 
-# 版本管理
-version-patch: ## 升级补丁版本
-	@echo "$(GREEN)升级补丁版本...$(RESET)"
-	uv run bump2version patch
+# 健康检查
+health:
+	@curl -f http://localhost:8000/health || echo "服务未运行"
 
-version-minor: ## 升级次版本
-	@echo "$(GREEN)升级次版本...$(RESET)"
-	uv run bump2version minor
+# 查看日志
+logs:
+	docker-compose -f docker-compose.dev.yml logs -f
 
-version-major: ## 升级主版本
-	@echo "$(GREEN)升级主版本...$(RESET)"
-	uv run bump2version major
+# 进入容器shell
+shell:
+	docker-compose -f docker-compose.dev.yml exec app bash
 
-# 快速命令别名
-t: test ## 测试别名
-f: format ## 格式化别名
-l: lint ## 检查别名
-d: dev ## 开发服务器别名
-c: clean ## 清理别名
+# 数据库shell
+db-shell:
+	docker-compose -f docker-compose.dev.yml exec postgres psql -U postgres -d crm_db

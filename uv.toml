@@ -1,0 +1,26 @@
+# UV 配置文件
+
+# Python 版本管理
+python-preference = "only-managed"
+python-downloads = "automatic"
+
+# 依赖解析配置
+resolution = "highest"
+prerelease = "disallow"
+
+# 缓存配置
+cache-dir = ".uv-cache"
+no-cache = false
+
+# 索引配置
+index-url = "https://pypi.org/simple"
+extra-index-url = [
+    "https://pypi.tuna.tsinghua.edu.cn/simple",  # 清华镜像
+]
+
+# 构建配置
+no-build = false
+
+# 网络配置
+concurrent-downloads = 8
+concurrent-builds = 4
